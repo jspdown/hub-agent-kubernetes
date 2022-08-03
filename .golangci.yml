@@ -213,5 +213,4 @@ issues:
       linters:
         - gocognit
     - path: cmd/agent/controller.go
-      linters:
-        - nosnakecase
+      text: '(O_WRONLY|O_CREATE|O_TRUNC) contains underscore'

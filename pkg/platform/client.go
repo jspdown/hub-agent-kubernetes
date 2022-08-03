@@ -41,6 +41,9 @@ import (
 	"github.com/traefik/hub-agent-kubernetes/pkg/version"
 )
 
+// ErrVersionConflict indicates a conflict error on the EdgeIngress resource being modified.
+var ErrVersionConflict = errors.New("version conflict")
+
 // APIError represents an error returned by the API.
 type APIError struct {
 	StatusCode int
@@ -49,6 +52,61 @@ type APIError struct {
 
 func (a APIError) Error() string {
 	return fmt.Sprintf("failed with code %d: %s", a.StatusCode, a.Message)
+}
+
+// CreateEdgeIngressReq is the request for creating an edge ingress.
+type CreateEdgeIngressReq struct {
+	Name      string  `json:"name"`
+	Namespace string  `json:"namespace"`
+	Service   Service `json:"service"`
+	ACP       *ACP    `json:"acp,omitempty"`
+}
+
+// Service defines the service being exposed by the edge ingress.
+type Service struct {
+	Name string `json:"name"`
+	Port int    `json:"port"`
+}
+
+// ACP defines the ACP attached to the edge ingress.
+type ACP struct {
+	Name string `json:"name"`
+}
+
+// Config holds the configuration of the offer.
+type Config struct {
+	Metrics MetricsConfig `json:"metrics"`
+}
+
+// MetricsConfig holds the metrics part of the offer config.
+type MetricsConfig struct {
+	Interval time.Duration `json:"interval"`
+	Tables   []string      `json:"tables"`
+}
+
+// UpdateEdgeIngressReq is a request for updating an edge ingress.
+type UpdateEdgeIngressReq struct {
+	Service Service `json:"service"`
+	ACP     *ACP    `json:"acp,omitempty"`
+}
+
+type linkClusterReq struct {
+	KubeID   string `json:"kubeId"`
+	Platform string `json:"platform"`
+	Version  string `json:"version"`
+}
+
+type linkClusterResp struct {
+	ClusterID string `json:"clusterId"`
+}
+
+type fetchResp struct {
+	Version  int64         `json:"version"`
+	Topology state.Cluster `json:"topology"`
+}
+
+type patchResp struct {
+	Version int64 `json:"version"`
 }
 
 // Client allows interacting with the cluster service.
@@ -74,16 +132,6 @@ func NewClient(baseURL, token string) (*Client, error) {
 		token:      token,
 		httpClient: client.StandardClient(),
 	}, nil
-}
-
-type linkClusterReq struct {
-	KubeID   string `json:"kubeId"`
-	Platform string `json:"platform"`
-	Version  string `json:"version"`
-}
-
-type linkClusterResp struct {
-	ClusterID string `json:"clusterId"`
 }
 
 // Link links the agent to the given Kubernetes ID.
@@ -130,17 +178,6 @@ func (c *Client) Link(ctx context.Context, kubeID string) (string, error) {
 	}
 
 	return linkResp.ClusterID, nil
-}
-
-// Config holds the configuration of the offer.
-type Config struct {
-	Metrics MetricsConfig `json:"metrics"`
-}
-
-// MetricsConfig holds the metrics part of the offer config.
-type MetricsConfig struct {
-	Interval time.Duration `json:"interval"`
-	Tables   []string      `json:"tables"`
 }
 
 // GetConfig returns the agent configuration.
@@ -286,28 +323,6 @@ func (c *Client) ListVerifiedDomains(ctx context.Context) ([]string, error) {
 	return domains, nil
 }
 
-// CreateEdgeIngressReq is the request for creating an edge ingress.
-type CreateEdgeIngressReq struct {
-	Name      string  `json:"name"`
-	Namespace string  `json:"namespace"`
-	Service   Service `json:"service"`
-	ACP       *ACP    `json:"acp,omitempty"`
-}
-
-// Service defines the service being exposed by the edge ingress.
-type Service struct {
-	Name string `json:"name"`
-	Port int    `json:"port"`
-}
-
-// ACP defines the ACP attached to the edge ingress.
-type ACP struct {
-	Name string `json:"name"`
-}
-
-// ErrVersionConflict indicates a conflict error on the EdgeIngress resource being modified.
-var ErrVersionConflict = errors.New("version conflict")
-
 // CreateEdgeIngress creates an edge ingress.
 func (c *Client) CreateEdgeIngress(ctx context.Context, createReq *CreateEdgeIngressReq) (*edgeingress.EdgeIngress, error) {
 	body, err := json.Marshal(createReq)
@@ -353,12 +368,6 @@ func (c *Client) CreateEdgeIngress(ctx context.Context, createReq *CreateEdgeIng
 
 		return nil, apiErr
 	}
-}
-
-// UpdateEdgeIngressReq is a request for updating an edge ingress.
-type UpdateEdgeIngressReq struct {
-	Service Service `json:"service"`
-	ACP     *ACP    `json:"acp,omitempty"`
 }
 
 // UpdateEdgeIngress updated an edge ingress.
@@ -714,11 +723,6 @@ func (c *Client) GetCertificateByDomains(ctx context.Context, domains []string) 
 	return cert, nil
 }
 
-type fetchResp struct {
-	Version  int64         `json:"version"`
-	Topology state.Cluster `json:"topology"`
-}
-
 // FetchTopology fetches the topology.
 func (c *Client) FetchTopology(ctx context.Context) (topology state.Cluster, topoVersion int64, err error) {
 	baseURL, err := c.baseURL.Parse(path.Join(c.baseURL.Path, "topology"))
@@ -740,7 +744,7 @@ func (c *Client) FetchTopology(ctx context.Context) (topology state.Cluster, top
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := ungzipBody(resp)
+	body, err := readBody(resp)
 	if err != nil {
 		return state.Cluster{}, 0, err
 	}
@@ -760,10 +764,6 @@ func (c *Client) FetchTopology(ctx context.Context) (topology state.Cluster, top
 	}
 
 	return r.Topology, r.Version, nil
-}
-
-type patchResp struct {
-	Version int64 `json:"version"`
 }
 
 // PatchTopology submits a JSON Merge Patch to the platform containing the difference in the topology since
@@ -832,7 +832,7 @@ func newGzippedRequestWithContext(ctx context.Context, verb, u string, body []by
 	return req, nil
 }
 
-func ungzipBody(resp *http.Response) ([]byte, error) {
+func readBody(resp *http.Response) ([]byte, error) {
 	contentEncoding := resp.Header.Get("Content-Encoding")
 
 	switch contentEncoding {
