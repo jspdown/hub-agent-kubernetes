@@ -27,7 +27,6 @@ import (
 	"github.com/ettle/strcase"
 	"github.com/rs/zerolog/log"
 	"github.com/traefik/hub-agent-kubernetes/pkg/commands"
-	hubclientset "github.com/traefik/hub-agent-kubernetes/pkg/crd/generated/client/hub/clientset/versioned"
 	traefikclientset "github.com/traefik/hub-agent-kubernetes/pkg/crd/generated/client/traefik/clientset/versioned"
 	"github.com/traefik/hub-agent-kubernetes/pkg/heartbeat"
 	"github.com/traefik/hub-agent-kubernetes/pkg/kube"
@@ -125,11 +124,6 @@ func (c controllerCmd) run(cliCtx *cli.Context) error {
 		return fmt.Errorf("create Traefik client set: %w", err)
 	}
 
-	hubClientSet, err := hubclientset.NewForConfig(kubeCfg)
-	if err != nil {
-		return fmt.Errorf("create Hub client set: %w", err)
-	}
-
 	platformClient, err := platform.NewClient(platformURL, token)
 	if err != nil {
 		return fmt.Errorf("build platform client: %w", err)
@@ -150,7 +144,7 @@ func (c controllerCmd) run(cliCtx *cli.Context) error {
 	}
 	topoWatch := topology.NewWatcher(topoFetcher, store.New(platformClient))
 
-	commandWatcher := commands.NewWatcher(platformClient, kubeClient, hubClientSet)
+	commandWatcher := commands.NewWatcher(platformClient, kubeClient, traefikClientSet)
 
 	group, ctx := errgroup.WithContext(cliCtx.Context)
 

@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	hubclientset "github.com/traefik/hub-agent-kubernetes/pkg/crd/generated/client/hub/clientset/versioned"
+	traefikclientset "github.com/traefik/hub-agent-kubernetes/pkg/crd/generated/client/traefik/clientset/versioned"
 	"github.com/traefik/hub-agent-kubernetes/pkg/platform"
 	clientset "k8s.io/client-go/kubernetes"
 )
@@ -51,12 +51,12 @@ type Watcher struct {
 }
 
 // NewWatcher creates a Watcher.
-func NewWatcher(store Store, k8sClientSet clientset.Interface, hubClientSet hubclientset.Interface) *Watcher {
+func NewWatcher(store Store, k8sClientSet clientset.Interface, traefikClientSet traefikclientset.Interface) *Watcher {
 	return &Watcher{
 		store: store,
 		commands: map[string]Handler{
-			"set-ingress-acp":    NewSetIngressACPCommand(k8sClientSet, hubClientSet),
-			"delete-ingress-acp": NewDeleteIngressACPCommand(k8sClientSet),
+			"set-ingress-acp":    NewSetIngressACPCommand(k8sClientSet, traefikClientSet),
+			"delete-ingress-acp": NewDeleteIngressACPCommand(k8sClientSet, traefikClientSet),
 		},
 	}
 }
@@ -106,7 +106,7 @@ func (w *Watcher) applyPendingCommands(ctx context.Context) {
 				Str("command", command.Type).
 				Msg("Command unsupported on this agent version")
 
-			reports = append(reports, *newErrorReport(command.ID, reportErrorTypeUnsupportedCommand))
+			reports = append(reports, *newErrorReportWithType(command.ID, reportErrorTypeUnsupportedCommand))
 			continue
 		}
 

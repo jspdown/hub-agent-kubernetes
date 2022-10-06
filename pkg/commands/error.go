@@ -17,19 +17,46 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 package commands
 
-import "github.com/traefik/hub-agent-kubernetes/pkg/platform"
+import (
+	"errors"
+
+	"github.com/traefik/hub-agent-kubernetes/pkg/platform"
+	kerror "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 type reportErrorType string
 
 const (
 	reportErrorTypeInternalError      reportErrorType = "internal-error"
 	reportErrorTypeUnsupportedCommand reportErrorType = "unsupported-command"
-	reportErrorTypeInvalidIngressID   reportErrorType = "invalid-ingress-id"
 	reportErrorTypeIngressNotFound    reportErrorType = "ingress-not-found"
 	reportErrorTypeACPNotFound        reportErrorType = "acp-not-found"
 )
 
-func newErrorReport(commandID string, typ reportErrorType) *platform.CommandExecutionReport {
+func newErrorReport(commandID string, err error) *platform.CommandExecutionReport {
+	var statusErr *kerror.StatusError
+	if !errors.As(err, &statusErr) {
+		return newInternalErrorReport(commandID, err)
+	}
+
+	if statusErr.Status().Reason == metav1.StatusReasonNotFound {
+		if statusErr.Status().Details == nil {
+			return newInternalErrorReport(commandID, err)
+		}
+
+		switch statusErr.Status().Details.Kind {
+		case "ingresses", "ingressroutes":
+			return newErrorReportWithType(commandID, reportErrorTypeIngressNotFound)
+		case "accesscontrolpolicies":
+			return newErrorReportWithType(commandID, reportErrorTypeACPNotFound)
+		}
+	}
+
+	return newInternalErrorReport(commandID, err)
+}
+
+func newErrorReportWithType(commandID string, typ reportErrorType) *platform.CommandExecutionReport {
 	return platform.NewErrorCommandExecutionReport(commandID, platform.CommandExecutionReportError{
 		Type: string(typ),
 	})
