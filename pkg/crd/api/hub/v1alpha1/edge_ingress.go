@@ -61,7 +61,7 @@ func (in *EdgeIngressSpec) Hash() (string, error) {
 		return "", fmt.Errorf("encode ACP: %w", err)
 	}
 
-	hash := sha1.New() //nolint:gosec // Used for content di0ffing, no impact on security
+	hash := sha1.New() //nolint:gosec // Used for content diffing, no impact on security
 	hash.Write(b)
 
 	return base64.StdEncoding.EncodeToString(hash.Sum(nil)), nil
