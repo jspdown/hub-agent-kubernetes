@@ -18,7 +18,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 package v1alpha1
 
 import (
-	"crypto/sha1" //nolint:gosec // TODO need to be replaced by sh256?
+	"crypto/sha1" //nolint:gosec // Used for content diffing, no impact on security
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -61,7 +61,7 @@ func (in *EdgeIngressSpec) Hash() (string, error) {
 		return "", fmt.Errorf("encode ACP: %w", err)
 	}
 
-	hash := sha1.New() //nolint:gosec
+	hash := sha1.New() //nolint:gosec // Used for content di0ffing, no impact on security
 	hash.Write(b)
 
 	return base64.StdEncoding.EncodeToString(hash.Sum(nil)), nil
