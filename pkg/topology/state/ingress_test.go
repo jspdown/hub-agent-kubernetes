@@ -48,6 +48,9 @@ func TestFetcher_GetIngresses(t *testing.T) {
 				Annotations: map[string]string{
 					"cert-manager.io/cluster-issuer": "foo",
 				},
+				Labels: map[string]string{
+					"app.kubernetes.io/managed-by": "traefik-hub",
+				},
 			},
 			IngressClassName: stringPtr("myIngressClass"),
 			TLS: []netv1.IngressTLS{

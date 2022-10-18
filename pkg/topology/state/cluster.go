@@ -53,6 +53,7 @@ type Service struct {
 // IngressMeta represents the common Ingress metadata properties.
 type IngressMeta struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
 }
 
 // Ingress describes an Kubernetes Ingress.
