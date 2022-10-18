@@ -108,7 +108,6 @@ type RouteService struct {
 // AccessControlPolicy describes an Access Control Policy configured within a cluster.
 type AccessControlPolicy struct {
 	Name       string                         `json:"name"`
-	Namespace  string                         `json:"namespace"`
 	Method     string                         `json:"method"`
 	JWT        *AccessControlPolicyJWT        `json:"jwt,omitempty"`
 	BasicAuth  *AccessControlPolicyBasicAuth  `json:"basicAuth,omitempty"`

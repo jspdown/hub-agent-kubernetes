@@ -32,8 +32,7 @@ func (f *Fetcher) getAccessControlPolicies() (map[string]*AccessControlPolicy, e
 	result := make(map[string]*AccessControlPolicy)
 	for _, policy := range policies {
 		acp := &AccessControlPolicy{
-			Name:      policy.Name,
-			Namespace: policy.Namespace,
+			Name: policy.Name,
 		}
 
 		switch {
@@ -54,7 +53,7 @@ func (f *Fetcher) getAccessControlPolicies() (map[string]*AccessControlPolicy, e
 				acp.JWT.SigningSecret = "redacted"
 			}
 		case policy.Spec.BasicAuth != nil:
-			acp.Method = "basicauth"
+			acp.Method = "basicAuth"
 			acp.BasicAuth = &AccessControlPolicyBasicAuth{
 				Users:                    redactPasswords(policy.Spec.BasicAuth.Users),
 				Realm:                    policy.Spec.BasicAuth.Realm,
@@ -64,58 +63,76 @@ func (f *Fetcher) getAccessControlPolicies() (map[string]*AccessControlPolicy, e
 		case policy.Spec.OIDC != nil:
 			acp.Method = "oidc"
 			acp.OIDC = &AccessControlPolicyOIDC{
-				Issuer:   policy.Spec.OIDC.Issuer,
-				ClientID: policy.Spec.OIDC.ClientID,
-				Secret: &SecretReference{
+				Issuer:         policy.Spec.OIDC.Issuer,
+				ClientID:       policy.Spec.OIDC.ClientID,
+				RedirectURL:    policy.Spec.OIDC.RedirectURL,
+				LogoutURL:      policy.Spec.OIDC.LogoutURL,
+				Scopes:         policy.Spec.OIDC.Scopes,
+				AuthParams:     policy.Spec.OIDC.AuthParams,
+				ForwardHeaders: policy.Spec.OIDC.ForwardHeaders,
+				Claims:         policy.Spec.OIDC.Claims,
+			}
+
+			if policy.Spec.OIDC.Secret != nil {
+				acp.OIDC.Secret = &SecretReference{
 					Name:      policy.Spec.OIDC.Secret.Name,
 					Namespace: policy.Spec.OIDC.Secret.Namespace,
-				},
-				RedirectURL: policy.Spec.OIDC.RedirectURL,
-				LogoutURL:   policy.Spec.OIDC.LogoutURL,
-				Scopes:      policy.Spec.OIDC.Scopes,
-				AuthParams:  policy.Spec.OIDC.AuthParams,
-				StateCookie: &AuthStateCookie{
+				}
+			}
+
+			if policy.Spec.OIDC.StateCookie != nil {
+				acp.OIDC.StateCookie = &AuthStateCookie{
 					Path:     policy.Spec.OIDC.StateCookie.Path,
 					Domain:   policy.Spec.OIDC.StateCookie.Domain,
 					SameSite: policy.Spec.OIDC.StateCookie.SameSite,
 					Secure:   policy.Spec.OIDC.StateCookie.Secure,
-				},
-				Session: &AuthSession{
+				}
+			}
+
+			if policy.Spec.OIDC.Session != nil {
+				acp.OIDC.Session = &AuthSession{
 					Path:     policy.Spec.OIDC.Session.Path,
 					Domain:   policy.Spec.OIDC.Session.Domain,
 					SameSite: policy.Spec.OIDC.Session.SameSite,
 					Secure:   policy.Spec.OIDC.Session.Secure,
 					Refresh:  policy.Spec.OIDC.Session.Refresh,
-				},
-				ForwardHeaders: policy.Spec.OIDC.ForwardHeaders,
-				Claims:         policy.Spec.OIDC.Claims,
+				}
 			}
 		case policy.Spec.OIDCGoogle != nil:
 			acp.Method = "oidcGoogle"
 			acp.OIDCGoogle = &AccessControlPolicyOIDCGoogle{
-				ClientID: policy.Spec.OIDCGoogle.ClientID,
-				Secret: &SecretReference{
+				ClientID:       policy.Spec.OIDCGoogle.ClientID,
+				RedirectURL:    policy.Spec.OIDCGoogle.RedirectURL,
+				LogoutURL:      policy.Spec.OIDCGoogle.LogoutURL,
+				AuthParams:     policy.Spec.OIDCGoogle.AuthParams,
+				ForwardHeaders: policy.Spec.OIDCGoogle.ForwardHeaders,
+				Emails:         policy.Spec.OIDCGoogle.Emails,
+			}
+
+			if policy.Spec.OIDCGoogle.Secret != nil {
+				acp.OIDCGoogle.Secret = &SecretReference{
 					Name:      policy.Spec.OIDCGoogle.Secret.Name,
 					Namespace: policy.Spec.OIDCGoogle.Secret.Namespace,
-				},
-				RedirectURL: policy.Spec.OIDCGoogle.RedirectURL,
-				LogoutURL:   policy.Spec.OIDCGoogle.LogoutURL,
-				AuthParams:  policy.Spec.OIDCGoogle.AuthParams,
-				StateCookie: &AuthStateCookie{
+				}
+			}
+
+			if policy.Spec.OIDCGoogle.StateCookie != nil {
+				acp.OIDCGoogle.StateCookie = &AuthStateCookie{
 					Path:     policy.Spec.OIDCGoogle.StateCookie.Path,
 					Domain:   policy.Spec.OIDCGoogle.StateCookie.Domain,
 					SameSite: policy.Spec.OIDCGoogle.StateCookie.SameSite,
 					Secure:   policy.Spec.OIDCGoogle.StateCookie.Secure,
-				},
-				Session: &AuthSession{
+				}
+			}
+
+			if policy.Spec.OIDCGoogle.Session != nil {
+				acp.OIDCGoogle.Session = &AuthSession{
 					Path:     policy.Spec.OIDCGoogle.Session.Path,
 					Domain:   policy.Spec.OIDCGoogle.Session.Domain,
 					SameSite: policy.Spec.OIDCGoogle.Session.SameSite,
 					Secure:   policy.Spec.OIDCGoogle.Session.Secure,
 					Refresh:  policy.Spec.OIDCGoogle.Session.Refresh,
-				},
-				ForwardHeaders: policy.Spec.OIDCGoogle.ForwardHeaders,
-				Emails:         policy.Spec.OIDCGoogle.Emails,
+				}
 			}
 		default:
 			continue
