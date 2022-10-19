@@ -171,8 +171,8 @@ type AccessControlPolicyOIDCGoogle struct {
 // SecretReference represents a Secret Reference.
 // It has enough information to retrieve secret in any namespace.
 type SecretReference struct {
-	Name      string
-	Namespace string
+	Name      string `json:"name"`
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // AuthStateCookie carries the state cookie configuration.
