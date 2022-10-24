@@ -128,14 +128,13 @@ func (p TraefikParser) guessEdgeIngress(lbls []*dto.LabelPair, state ScrapeState
 	}
 	for ingressName := range state.Ingresses {
 		// Remove the `.kind.group` from the namespace.
-		ingressName = strings.SplitN(ingressName, ".", 2)[0]
+		ingressName, _, _ = strings.Cut(ingressName, ".")
 
 		// Split on the @ sign to get the name and the namespace of the Ingress.
-		ingNameNamespace := strings.Split(ingressName, "@")
-		if len(ingNameNamespace) != 2 {
+		ingName, ingNamespace, ok := strings.Cut(ingressName, "@")
+		if !ok {
 			continue
 		}
-		ingName, ingNamespace := ingNameNamespace[0], ingNameNamespace[1]
 
 		// The name of ingresses follows the following rules:
 		// Traefik > 2.8+ (https://github.com/traefik/traefik/pull/9221):
