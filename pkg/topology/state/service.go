@@ -24,8 +24,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"sort"
 
+	"github.com/rs/zerolog/log"
+	"github.com/traefik/hub-agent-kubernetes/pkg/openapi"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -58,20 +61,57 @@ func (f *Fetcher) getServices() (map[string]*Service, error) {
 			}
 		}
 
+		oasLocation, err := f.getOpenAPISpecLocation(service)
+		if err != nil {
+			log.Error().Err(err).
+				Str("service_name", service.Name).
+				Str("service_namespace", service.Namespace).
+				Msg("Unable to find OpenAPI specification")
+		}
+
 		sort.Strings(externalIPs)
 
 		svcName := objectKey(service.Name, service.Namespace)
 		svcs[svcName] = &Service{
-			Name:          service.Name,
-			Namespace:     service.Namespace,
-			Annotations:   sanitizeAnnotations(service.Annotations),
-			Type:          service.Spec.Type,
-			ExternalIPs:   externalIPs,
-			ExternalPorts: externalPorts,
+			Name:                service.Name,
+			Namespace:           service.Namespace,
+			Annotations:         sanitizeAnnotations(service.Annotations),
+			Type:                service.Spec.Type,
+			ExternalIPs:         externalIPs,
+			ExternalPorts:       externalPorts,
+			OpenAPISpecLocation: oasLocation,
 		}
 	}
 
 	return svcs, nil
+}
+
+func (f *Fetcher) getOpenAPISpecLocation(service *corev1.Service) (*openapi.Location, error) {
+	location, err := openapi.GetLocationFromService(service)
+	if err != nil {
+		return nil, err
+	}
+
+	if location == nil {
+		return nil, nil
+	}
+
+	u := &url.URL{
+		Scheme: "http",
+		Host:   fmt.Sprintf("%s.%s.svc:%d", service.Name, service.Namespace, location.Port),
+		Path:   location.Path,
+	}
+
+	spec, err := f.specs.LoadFromURI(u)
+	if err != nil {
+		return nil, fmt.Errorf("load specification: %w", err)
+	}
+
+	if err = spec.Validate(context.Background()); err != nil {
+		return nil, fmt.Errorf("validate specification: %w", err)
+	}
+
+	return location, nil
 }
 
 // GetServiceLogs returns the logs from a service.
