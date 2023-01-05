@@ -31,7 +31,7 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Catalog defines an catalog.
-// +kubebuilder:printcolumn:name="URLs",type=string,JSONPath=`.status.urls`
+// +kubebuilder:printcolumn:name="URL",type=string,JSONPath=`.status.url`
 type Catalog struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -47,10 +47,10 @@ type Catalog struct {
 
 // CatalogSpec configures a Catalog.
 type CatalogSpec struct {
+	// Host is the hostname on which the API will be exposed.
+	Host string `json:"host,omitempty"`
 	// Services are the list of Services available in the Catalog.
 	Services []CatalogService `json:"services,omitempty"`
-	// CustomDomains are the custom domains for accessing the exposed service.
-	CustomDomains []string `json:"customDomains,omitempty"`
 }
 
 // Hash generates the hash of the spec.
@@ -79,11 +79,8 @@ type CatalogStatus struct {
 	Version  string      `json:"version,omitempty"`
 	SyncedAt metav1.Time `json:"syncedAt,omitempty"`
 
-	// CustomDomains are the custom domains for accessing the Catalog API.
-	CustomDomains []string `json:"customDomains,omitempty"`
-
-	// URLs is the list of coma separated URL for accessing the Catalog API.
-	URLs string `json:"urls,omitempty"`
+	// URL is the URL for accessing the Catalog API.
+	URL string `json:"url"`
 
 	// SpecHash is a hash representing the CatalogSpec
 	SpecHash string `json:"specHash,omitempty"`

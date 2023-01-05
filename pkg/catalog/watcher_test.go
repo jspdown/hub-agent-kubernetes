@@ -54,7 +54,7 @@ var toUpdate = hubv1alpha1.Catalog{
 	Status: hubv1alpha1.CatalogStatus{
 		Version:  "version-1",
 		SyncedAt: metav1.NewTime(time.Now().Add(-time.Hour)),
-		URLs:     "https://sad-bat-456.hub-traefik.io",
+		URL:      "https://sad-bat-456.hub-traefik.io",
 		SpecHash: "yxjMx+3w4R4B4YPzoGkqi/g9rLs=",
 	},
 }
@@ -80,7 +80,7 @@ var toDelete = hubv1alpha1.Catalog{
 	Status: hubv1alpha1.CatalogStatus{
 		Version:  "version-1",
 		SyncedAt: metav1.NewTime(time.Now().Add(-time.Hour)),
-		URLs:     "https://broken-cat-123.hub-traefik.io",
+		URL:      "https://broken-cat-123.hub-traefik.io",
 		SpecHash: "7kfh53DLsXumNEaO/nkeVYs/5CI=",
 	},
 }
@@ -100,6 +100,7 @@ func Test_WatcherRun(t *testing.T) {
 		{
 			Name:    "toCreate",
 			Version: "version-1",
+			Host:    "hello.example.com",
 			Services: []hubv1alpha1.CatalogService{
 				{
 					Name:       "views",
@@ -108,7 +109,6 @@ func Test_WatcherRun(t *testing.T) {
 					PathPrefix: "/views",
 				},
 			},
-			CustomDomains: []string{"hello.example.com", "goodbye.example.com"},
 		},
 		{
 			Name:    "toUpdate",
@@ -134,14 +134,13 @@ func Test_WatcherRun(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "toCreate"},
 			Spec: hubv1alpha1.CatalogSpec{
-				Services:      catalogs[0].Services,
-				CustomDomains: []string{"hello.example.com", "goodbye.example.com"},
+				Host:     "hello.example.com",
+				Services: catalogs[0].Services,
 			},
 			Status: hubv1alpha1.CatalogStatus{
-				Version:       "version-1",
-				URLs:          "https://hello.example.com,https://goodbye.example.com",
-				CustomDomains: []string{"hello.example.com", "goodbye.example.com"},
-				SpecHash:      "fz2mkXNcmMa+o/T3jbvRmp8pD9g=",
+				Version:  "version-1",
+				URL:      "https://hello.example.com",
+				SpecHash: "xyOkzmI1awHVDNUdOdqu1UHVR/E=",
 			},
 		},
 		{

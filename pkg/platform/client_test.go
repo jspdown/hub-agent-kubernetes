@@ -600,6 +600,7 @@ func TestClient_GetCatalogs(t *testing.T) {
 			ClusterID:   "cluster-id",
 			Name:        "name",
 			Version:     "version",
+			Host:        "hello.example.com",
 			Services: []catalog.Service{
 				{
 					Name:       "user",
@@ -608,9 +609,8 @@ func TestClient_GetCatalogs(t *testing.T) {
 					PathPrefix: "/users",
 				},
 			},
-			CustomDomains: []string{"hello.example.com"},
-			CreatedAt:     time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
-			UpdatedAt:     time.Now().UTC().Truncate(time.Millisecond),
+			CreatedAt: time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
+			UpdatedAt: time.Now().UTC().Truncate(time.Millisecond),
 		},
 	}
 
@@ -662,6 +662,7 @@ func TestClient_CreateCatalog(t *testing.T) {
 			desc: "create catalog",
 			createReq: &CreateCatalogReq{
 				Name: "name",
+				Host: "hello.example.com",
 				Services: []catalog.Service{
 					{
 						Name:       "user",
@@ -670,7 +671,6 @@ func TestClient_CreateCatalog(t *testing.T) {
 						PathPrefix: "/users",
 					},
 				},
-				CustomDomains: []string{"hello.example.com"},
 			},
 			returnStatusCode: http.StatusCreated,
 			wantErr:          assert.NoError,
@@ -773,6 +773,7 @@ func TestClient_UpdateCatalog(t *testing.T) {
 			name:    "name",
 			version: "version-1",
 			updateReq: &UpdateCatalogReq{
+				Host: "hello.example.com",
 				Services: []catalog.Service{
 					{
 						Name:       "user",
@@ -781,7 +782,6 @@ func TestClient_UpdateCatalog(t *testing.T) {
 						PathPrefix: "/users",
 					},
 				},
-				CustomDomains: []string{"hello.example.com"},
 			},
 			returnStatusCode: http.StatusOK,
 			wantErr:          assert.NoError,

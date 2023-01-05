@@ -95,15 +95,15 @@ type UpdateEdgeIngressReq struct {
 
 // CreateCatalogReq is the request for creating a catalog.
 type CreateCatalogReq struct {
-	Name          string            `json:"name"`
-	Services      []catalog.Service `json:"services"`
-	CustomDomains []string          `json:"customDomains,omitempty"`
+	Name     string            `json:"name"`
+	Host     string            `json:"host"`
+	Services []catalog.Service `json:"services"`
 }
 
 // UpdateCatalogReq is a request for updating a catalog.
 type UpdateCatalogReq struct {
-	Services      []catalog.Service `json:"services"`
-	CustomDomains []string          `json:"customDomains,omitempty"`
+	Host     string            `json:"host"`
+	Services []catalog.Service `json:"services"`
 }
 
 // Command defines patch operation to apply on the cluster.

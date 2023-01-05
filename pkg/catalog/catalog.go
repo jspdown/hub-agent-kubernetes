@@ -19,7 +19,6 @@ package catalog
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	hubv1alpha1 "github.com/traefik/hub-agent-kubernetes/pkg/crd/api/hub/v1alpha1"
@@ -34,8 +33,8 @@ type Catalog struct {
 
 	Version string `json:"version"`
 
-	Services      []Service `json:"services,omitempty"`
-	CustomDomains []string  `json:"customDomains,omitempty"`
+	Host     string    `json:"host"`
+	Services []Service `json:"services,omitempty"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -53,8 +52,8 @@ type Service = hubv1alpha1.CatalogService
 // Resource builds the v1alpha1 EdgeIngress resource.
 func (e *Catalog) Resource() (*hubv1alpha1.Catalog, error) {
 	spec := hubv1alpha1.CatalogSpec{
-		Services:      e.Services,
-		CustomDomains: e.CustomDomains,
+		Host:     e.Host,
+		Services: e.Services,
 	}
 
 	specHash, err := spec.Hash()
@@ -62,22 +61,19 @@ func (e *Catalog) Resource() (*hubv1alpha1.Catalog, error) {
 		return nil, fmt.Errorf("compute spec hash: %w", err)
 	}
 
-	var urls []string
-	var verifiedCustomDomains []string
-	for _, domain := range e.CustomDomains {
-		urls = append(urls, "https://"+domain)
-		verifiedCustomDomains = append(verifiedCustomDomains, domain)
+	var url string
+	if e.Host != "" {
+		url = "https://" + e.Host
 	}
 
 	return &hubv1alpha1.Catalog{
 		ObjectMeta: metav1.ObjectMeta{Name: e.Name},
 		Spec:       spec,
 		Status: hubv1alpha1.CatalogStatus{
-			Version:       e.Version,
-			SyncedAt:      metav1.Now(),
-			CustomDomains: verifiedCustomDomains,
-			URLs:          strings.Join(urls, ","),
-			SpecHash:      specHash,
+			Version:  e.Version,
+			SyncedAt: metav1.Now(),
+			URL:      url,
+			SpecHash: specHash,
 		},
 	}, nil
 }

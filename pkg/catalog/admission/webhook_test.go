@@ -38,6 +38,7 @@ import (
 )
 
 var testCatalogSpec = hubv1alpha1.CatalogSpec{
+	Host: "foo.example.com",
 	Services: []hubv1alpha1.CatalogService{
 		{
 			Name:       "whoami",
@@ -46,7 +47,6 @@ var testCatalogSpec = hubv1alpha1.CatalogSpec{
 			PathPrefix: "/whoami",
 		},
 	},
-	CustomDomains: []string{"foo.example.com"},
 }
 
 func TestHandler_ServeHTTP_createOperation(t *testing.T) {
@@ -78,19 +78,19 @@ func TestHandler_ServeHTTP_createOperation(t *testing.T) {
 		Response: &admv1.AdmissionResponse{},
 	}
 	wantCreateReq := &platform.CreateCatalogReq{
-		Name:          catalogName,
-		Services:      testCatalogSpec.Services,
-		CustomDomains: testCatalogSpec.CustomDomains,
+		Name:     catalogName,
+		Services: testCatalogSpec.Services,
+		Host:     testCatalogSpec.Host,
 	}
 	createdCatalog := &catalog.Catalog{
-		WorkspaceID:   "workspace-id",
-		ClusterID:     "cluster-id",
-		Name:          catalogName,
-		Version:       "version-1",
-		Services:      testCatalogSpec.Services,
-		CustomDomains: testCatalogSpec.CustomDomains,
-		CreatedAt:     time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
-		UpdatedAt:     time.Now().UTC().Truncate(time.Millisecond),
+		WorkspaceID: "workspace-id",
+		ClusterID:   "cluster-id",
+		Name:        catalogName,
+		Version:     "version-1",
+		Services:    testCatalogSpec.Services,
+		Host:        testCatalogSpec.Host,
+		CreatedAt:   time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
+		UpdatedAt:   time.Now().UTC().Truncate(time.Millisecond),
 	}
 
 	client := newBackendMock(t)
@@ -118,11 +118,10 @@ func TestHandler_ServeHTTP_createOperation(t *testing.T) {
 		PatchType: wantPatchType,
 		Patch: mustMarshal(t, []patch{
 			{Op: "replace", Path: "/status", Value: hubv1alpha1.CatalogStatus{
-				Version:       "version-1",
-				SyncedAt:      now,
-				CustomDomains: []string{"foo.example.com"},
-				URLs:          "https://foo.example.com",
-				SpecHash:      "vIDq0tQjWV9YFvKoUuwffeBc6Vc=",
+				Version:  "version-1",
+				SyncedAt: now,
+				URL:      "https://foo.example.com",
+				SpecHash: "1oygzpmu4gAeksoCec09nu6J6+Y=",
 			}},
 		}),
 	}
@@ -200,6 +199,7 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: catalogName},
 		Spec: hubv1alpha1.CatalogSpec{
+			Host: "foo.example.com",
 			Services: []hubv1alpha1.CatalogService{
 				{
 					Name:       "new-whoami",
@@ -208,7 +208,6 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 					PathPrefix: "/new-whoami",
 				},
 			},
-			CustomDomains: []string{"foo.example.com"},
 		},
 	}
 	oldCatalog := hubv1alpha1.Catalog{
@@ -243,18 +242,18 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 		Response: &admv1.AdmissionResponse{},
 	}
 	wantUpdateReq := &platform.UpdateCatalogReq{
-		Services:      newCatalog.Spec.Services,
-		CustomDomains: newCatalog.Spec.CustomDomains,
+		Host:     newCatalog.Spec.Host,
+		Services: newCatalog.Spec.Services,
 	}
 	updatedCatalog := &catalog.Catalog{
-		WorkspaceID:   "workspace-id",
-		ClusterID:     "cluster-id",
-		Name:          catalogName,
-		Version:       "version-4",
-		Services:      newCatalog.Spec.Services,
-		CustomDomains: newCatalog.Spec.CustomDomains,
-		CreatedAt:     time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
-		UpdatedAt:     time.Now().UTC().Truncate(time.Millisecond),
+		WorkspaceID: "workspace-id",
+		ClusterID:   "cluster-id",
+		Name:        catalogName,
+		Version:     "version-4",
+		Host:        newCatalog.Spec.Host,
+		Services:    newCatalog.Spec.Services,
+		CreatedAt:   time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
+		UpdatedAt:   time.Now().UTC().Truncate(time.Millisecond),
 	}
 
 	client := newBackendMock(t)
@@ -283,11 +282,10 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 		PatchType: wantPatchType,
 		Patch: mustMarshal(t, []patch{
 			{Op: "replace", Path: "/status", Value: hubv1alpha1.CatalogStatus{
-				Version:       "version-4",
-				SyncedAt:      now,
-				CustomDomains: []string{"foo.example.com"},
-				URLs:          "https://foo.example.com",
-				SpecHash:      "io0zyEE2rqydJydCxxy+5i3i39U=",
+				Version:  "version-4",
+				SyncedAt: now,
+				URL:      "https://foo.example.com",
+				SpecHash: "feOOna+mRcy8oJynPKHwLdkcPx4=",
 			}},
 		}),
 	}
@@ -319,6 +317,7 @@ func TestHandler_ServeHTTP_updateOperationConflict(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{Name: catalogName},
 					Spec: hubv1alpha1.CatalogSpec{
+						Host: "foo.example.com",
 						Services: []hubv1alpha1.CatalogService{
 							{
 								Name:       "new-whoami",
@@ -327,7 +326,6 @@ func TestHandler_ServeHTTP_updateOperationConflict(t *testing.T) {
 								PathPrefix: "/new-whoami",
 							},
 						},
-						CustomDomains: []string{"foo.example.com"},
 					},
 				}),
 			},

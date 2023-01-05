@@ -369,11 +369,6 @@ func (in *CatalogSpec) DeepCopyInto(out *CatalogSpec) {
 		*out = make([]CatalogService, len(*in))
 		copy(*out, *in)
 	}
-	if in.CustomDomains != nil {
-		in, out := &in.CustomDomains, &out.CustomDomains
-		*out = make([]string, len(*in))
-		copy(*out, *in)
-	}
 	return
 }
 
@@ -391,11 +386,6 @@ func (in *CatalogSpec) DeepCopy() *CatalogSpec {
 func (in *CatalogStatus) DeepCopyInto(out *CatalogStatus) {
 	*out = *in
 	in.SyncedAt.DeepCopyInto(&out.SyncedAt)
-	if in.CustomDomains != nil {
-		in, out := &in.CustomDomains, &out.CustomDomains
-		*out = make([]string, len(*in))
-		copy(*out, *in)
-	}
 	return
 }
 
