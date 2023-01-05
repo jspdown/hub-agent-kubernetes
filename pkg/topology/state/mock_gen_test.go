@@ -3,6 +3,7 @@
 package state
 
 import (
+	"context"
 	"net/url"
 	"testing"
 	"time"
@@ -26,7 +27,7 @@ func newOpenAPISpecLoaderMock(tb testing.TB) *openAPISpecLoaderMock {
 	return m
 }
 
-func (_m *openAPISpecLoaderMock) LoadFromURI(uri *url.URL) (*openapi.Spec, error) {
+func (_m *openAPISpecLoaderMock) Load(_ context.Context, uri *url.URL) (*openapi.Spec, error) {
 	_ret := _m.Called(uri)
 
 	if _rf, ok := _ret.Get(0).(func(*url.URL) (*openapi.Spec, error)); ok {
@@ -39,70 +40,70 @@ func (_m *openAPISpecLoaderMock) LoadFromURI(uri *url.URL) (*openapi.Spec, error
 	return _ra0, _rb1
 }
 
-func (_m *openAPISpecLoaderMock) OnLoadFromURI(uri *url.URL) *openAPISpecLoaderLoadFromURICall {
-	return &openAPISpecLoaderLoadFromURICall{Call: _m.Mock.On("LoadFromURI", uri), Parent: _m}
+func (_m *openAPISpecLoaderMock) OnLoad(uri *url.URL) *openAPISpecLoaderLoadCall {
+	return &openAPISpecLoaderLoadCall{Call: _m.Mock.On("Load", uri), Parent: _m}
 }
 
-func (_m *openAPISpecLoaderMock) OnLoadFromURIRaw(uri interface{}) *openAPISpecLoaderLoadFromURICall {
-	return &openAPISpecLoaderLoadFromURICall{Call: _m.Mock.On("LoadFromURI", uri), Parent: _m}
+func (_m *openAPISpecLoaderMock) OnLoadRaw(uri interface{}) *openAPISpecLoaderLoadCall {
+	return &openAPISpecLoaderLoadCall{Call: _m.Mock.On("Load", uri), Parent: _m}
 }
 
-type openAPISpecLoaderLoadFromURICall struct {
+type openAPISpecLoaderLoadCall struct {
 	*mock.Call
 	Parent *openAPISpecLoaderMock
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) Panic(msg string) *openAPISpecLoaderLoadFromURICall {
+func (_c *openAPISpecLoaderLoadCall) Panic(msg string) *openAPISpecLoaderLoadCall {
 	_c.Call = _c.Call.Panic(msg)
 	return _c
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) Once() *openAPISpecLoaderLoadFromURICall {
+func (_c *openAPISpecLoaderLoadCall) Once() *openAPISpecLoaderLoadCall {
 	_c.Call = _c.Call.Once()
 	return _c
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) Twice() *openAPISpecLoaderLoadFromURICall {
+func (_c *openAPISpecLoaderLoadCall) Twice() *openAPISpecLoaderLoadCall {
 	_c.Call = _c.Call.Twice()
 	return _c
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) Times(i int) *openAPISpecLoaderLoadFromURICall {
+func (_c *openAPISpecLoaderLoadCall) Times(i int) *openAPISpecLoaderLoadCall {
 	_c.Call = _c.Call.Times(i)
 	return _c
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) WaitUntil(w <-chan time.Time) *openAPISpecLoaderLoadFromURICall {
+func (_c *openAPISpecLoaderLoadCall) WaitUntil(w <-chan time.Time) *openAPISpecLoaderLoadCall {
 	_c.Call = _c.Call.WaitUntil(w)
 	return _c
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) After(d time.Duration) *openAPISpecLoaderLoadFromURICall {
+func (_c *openAPISpecLoaderLoadCall) After(d time.Duration) *openAPISpecLoaderLoadCall {
 	_c.Call = _c.Call.After(d)
 	return _c
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) Run(fn func(args mock.Arguments)) *openAPISpecLoaderLoadFromURICall {
+func (_c *openAPISpecLoaderLoadCall) Run(fn func(args mock.Arguments)) *openAPISpecLoaderLoadCall {
 	_c.Call = _c.Call.Run(fn)
 	return _c
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) Maybe() *openAPISpecLoaderLoadFromURICall {
+func (_c *openAPISpecLoaderLoadCall) Maybe() *openAPISpecLoaderLoadCall {
 	_c.Call = _c.Call.Maybe()
 	return _c
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) TypedReturns(a *openapi.Spec, b error) *openAPISpecLoaderLoadFromURICall {
+func (_c *openAPISpecLoaderLoadCall) TypedReturns(a *openapi.Spec, b error) *openAPISpecLoaderLoadCall {
 	_c.Call = _c.Return(a, b)
 	return _c
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) ReturnsFn(fn func(*url.URL) (*openapi.Spec, error)) *openAPISpecLoaderLoadFromURICall {
+func (_c *openAPISpecLoaderLoadCall) ReturnsFn(fn func(*url.URL) (*openapi.Spec, error)) *openAPISpecLoaderLoadCall {
 	_c.Call = _c.Return(fn)
 	return _c
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) TypedRun(fn func(*url.URL)) *openAPISpecLoaderLoadFromURICall {
+func (_c *openAPISpecLoaderLoadCall) TypedRun(fn func(*url.URL)) *openAPISpecLoaderLoadCall {
 	_c.Call = _c.Call.Run(func(args mock.Arguments) {
 		_uri, _ := args.Get(0).(*url.URL)
 		fn(_uri)
@@ -110,10 +111,10 @@ func (_c *openAPISpecLoaderLoadFromURICall) TypedRun(fn func(*url.URL)) *openAPI
 	return _c
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) OnLoadFromURI(uri *url.URL) *openAPISpecLoaderLoadFromURICall {
-	return _c.Parent.OnLoadFromURI(uri)
+func (_c *openAPISpecLoaderLoadCall) OnLoad(uri *url.URL) *openAPISpecLoaderLoadCall {
+	return _c.Parent.OnLoad(uri)
 }
 
-func (_c *openAPISpecLoaderLoadFromURICall) OnLoadFromURIRaw(uri interface{}) *openAPISpecLoaderLoadFromURICall {
-	return _c.Parent.OnLoadFromURIRaw(uri)
+func (_c *openAPISpecLoaderLoadCall) OnLoadRaw(uri interface{}) *openAPISpecLoaderLoadCall {
+	return _c.Parent.OnLoadRaw(uri)
 }

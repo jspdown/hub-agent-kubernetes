@@ -19,13 +19,14 @@ package openapi
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hashicorp/go-version"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -40,9 +41,9 @@ type Location struct {
 	Port int    `json:"port"`
 }
 
-// GetLocationFromService retrieve the location of an OpenAPI specification on the given service.
+// GetLocationFromService retrieves the location of an OpenAPI specification on the given service.
 func GetLocationFromService(service *corev1.Service) (*Location, error) {
-	aosPath, ok := service.Annotations[annotationOpenAPIPath]
+	oasPath, ok := service.Annotations[annotationOpenAPIPath]
 	if !ok {
 		return nil, nil
 	}
@@ -70,53 +71,74 @@ func GetLocationFromService(service *corev1.Service) (*Location, error) {
 	}
 
 	return &Location{
-		Path: aosPath,
+		Path: oasPath,
 		Port: int(aosPort),
 	}, nil
 }
 
 // Loader loads OpenAPI Specifications.
-type Loader struct{}
+type Loader struct {
+	client *http.Client
+}
 
-// LoadFromURI loads the OpenAPI Specification located at the given URL.
-func (l *Loader) LoadFromURI(uri *url.URL) (*Spec, error) {
-	// Create a new loader each time. Indeed, the openapi3 package caches the loaded specification documents. A change
-	// on the document without a change on the uri would not be detected. If caching is needed it must be built on top
-	// of this loader. Also, the loader wouldn't be safe for concurrent use otherwise.
-	loader := openapi3.NewLoader()
+// NewLoader creates a new Loader.
+func NewLoader() *Loader {
+	return &Loader{
+		client: &http.Client{
+			Timeout: time.Second * 5,
+		},
+	}
+}
 
-	spec, err := loader.LoadFromURI(uri)
+// Load loads the OpenAPI Specification located at the given URL.
+func (l *Loader) Load(ctx context.Context, uri *url.URL) (*Spec, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Accept", "application/yaml")
+
+	resp, err := l.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	// Spec needs to be wrapped, additional validations are required.
-	return &Spec{
-		spec: spec,
-	}, nil
+	if resp.StatusCode/100 != 2 {
+		return nil, fmt.Errorf("failed with code %d", resp.StatusCode)
+	}
+
+	// Use yaml package to unmarshal both YAML and JSON specification files.
+	var spec Spec
+	if err = yaml.NewDecoder(resp.Body).Decode(&spec); err != nil {
+		return nil, fmt.Errorf("decode: %w", err)
+	}
+
+	return &spec, nil
 }
 
 // Spec is an OpenAPI Specification.
 type Spec struct {
-	spec *openapi3.T
+	Swagger string `json:"swagger" yaml:"swagger"`
+	OpenAPI string `json:"openapi" yaml:"openapi"`
 }
 
-// UnmarshalJSON unmarshals the given bytes into itself.
-func (s *Spec) UnmarshalJSON(bytes []byte) error {
-	return json.Unmarshal(bytes, &s.spec)
-}
+// Validate validates the Specification.
+func (s *Spec) Validate() error {
+	if s.Swagger != "" {
+		return fmt.Errorf("unsupported version %q", s.Swagger)
+	}
 
-// Validate validates the specification.
-func (s *Spec) Validate(ctx context.Context) error {
-	v, err := version.NewVersion(s.spec.OpenAPI)
+	v, err := version.NewVersion(s.OpenAPI)
 	if err != nil {
-		return fmt.Errorf("invalid version: %w", err)
+		return fmt.Errorf("unsupported version: %q", s.OpenAPI)
 	}
 
 	major := v.Segments()[0]
 	if major != 3 {
-		return fmt.Errorf("unsupported version %q", v.String())
+		return fmt.Errorf("unsupported version %q", s.OpenAPI)
 	}
 
-	return s.spec.Validate(ctx)
+	return nil
 }

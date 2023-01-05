@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-func (f *Fetcher) getServices() (map[string]*Service, error) {
+func (f *Fetcher) getServices(ctx context.Context) (map[string]*Service, error) {
 	services, err := f.k8s.Core().V1().Services().Lister().List(labels.Everything())
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (f *Fetcher) getServices() (map[string]*Service, error) {
 			}
 		}
 
-		oasLocation, err := f.getOpenAPISpecLocation(service)
+		oasLocation, err := f.getOpenAPISpecLocation(ctx, service)
 		if err != nil {
 			log.Error().Err(err).
 				Str("service_name", service.Name).
@@ -86,7 +86,7 @@ func (f *Fetcher) getServices() (map[string]*Service, error) {
 	return svcs, nil
 }
 
-func (f *Fetcher) getOpenAPISpecLocation(service *corev1.Service) (*openapi.Location, error) {
+func (f *Fetcher) getOpenAPISpecLocation(ctx context.Context, service *corev1.Service) (*openapi.Location, error) {
 	location, err := openapi.GetLocationFromService(service)
 	if err != nil {
 		return nil, err
@@ -102,13 +102,13 @@ func (f *Fetcher) getOpenAPISpecLocation(service *corev1.Service) (*openapi.Loca
 		Path:   location.Path,
 	}
 
-	spec, err := f.specs.LoadFromURI(u)
+	spec, err := f.specs.Load(ctx, u)
 	if err != nil {
-		return nil, fmt.Errorf("load specification: %w", err)
+		return nil, fmt.Errorf("load specification %s: %w", u.String(), err)
 	}
 
-	if err = spec.Validate(context.Background()); err != nil {
-		return nil, fmt.Errorf("validate specification: %w", err)
+	if err = spec.Validate(); err != nil {
+		return nil, fmt.Errorf("validate specification %s: %w", u.String(), err)
 	}
 
 	return location, nil

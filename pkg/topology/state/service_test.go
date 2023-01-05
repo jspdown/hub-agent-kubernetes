@@ -97,7 +97,7 @@ func TestFetcher_GetServices(t *testing.T) {
 	f, err := watchAll(context.Background(), kubeClient, traefikClient, hubClient, "v1.20.1")
 	require.NoError(t, err)
 
-	gotSvcs, err := f.getServices()
+	gotSvcs, err := f.getServices(context.Background())
 	require.NoError(t, err)
 
 	assert.Equal(t, wantSvcs, gotSvcs)
@@ -167,7 +167,7 @@ func TestFetcher_GetServicesWithExternalIPs(t *testing.T) {
 	f, err := watchAll(context.Background(), kubeClient, traefikClient, hubClient, "v1.20.1")
 	require.NoError(t, err)
 
-	gotSvcs, err := f.getServices()
+	gotSvcs, err := f.getServices(context.Background())
 	require.NoError(t, err)
 
 	assert.Equal(t, wantSvcs, gotSvcs)
@@ -345,7 +345,7 @@ func TestFetcher_GetServicesWithOpenAPISpecs(t *testing.T) {
 				specURL, err = url.Parse(test.wantOpenAPISpecURI)
 				require.NoError(t, err)
 
-				loader.OnLoadFromURI(specURL).TypedReturns(NewOpenAPISpecFromData(t, []byte(`{
+				loader.OnLoad(specURL).TypedReturns(NewOpenAPISpecFromData(t, []byte(`{
 					"openapi": "3.1.0",
 					"info": {
 						"title": "my-api",
@@ -357,7 +357,7 @@ func TestFetcher_GetServicesWithOpenAPISpecs(t *testing.T) {
 
 			f.specs = loader
 
-			gotSvcs, err := f.getServices()
+			gotSvcs, err := f.getServices(context.Background())
 			require.NoError(t, err)
 
 			assert.Equal(t, test.want, gotSvcs)
@@ -400,11 +400,11 @@ func TestFetcher_GetServicesWithOpenAPISpecs_specNotFound(t *testing.T) {
 	specURL, err := url.Parse("http://svc.default.svc:8080/spec.json")
 	require.NoError(t, err)
 
-	loader.OnLoadFromURI(specURL).TypedReturns(nil, errors.New("spec not found"))
+	loader.OnLoad(specURL).TypedReturns(nil, errors.New("spec not found"))
 
 	f.specs = loader
 
-	gotSvcs, err := f.getServices()
+	gotSvcs, err := f.getServices(context.Background())
 	require.NoError(t, err)
 
 	assert.Equal(t, map[string]*Service{
@@ -456,13 +456,13 @@ func TestFetcher_GetServicesWithOpenAPISpecs_specInvalid(t *testing.T) {
 	specURL, err := url.Parse("http://svc.default.svc:8080/spec.json")
 	require.NoError(t, err)
 
-	loader.OnLoadFromURI(specURL).TypedReturns(NewOpenAPISpecFromData(t, []byte(`{
+	loader.OnLoad(specURL).TypedReturns(NewOpenAPISpecFromData(t, []byte(`{
 		"openapi": "2.1.0"
 	}`)), nil)
 
 	f.specs = loader
 
-	gotSvcs, err := f.getServices()
+	gotSvcs, err := f.getServices(context.Background())
 	require.NoError(t, err)
 
 	assert.Equal(t, map[string]*Service{

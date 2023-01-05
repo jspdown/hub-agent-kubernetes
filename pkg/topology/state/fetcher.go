@@ -41,7 +41,7 @@ import (
 
 // OpenAPISpecLoader can load OpenAPI specifications.
 type OpenAPISpecLoader interface {
-	LoadFromURI(uri *url.URL) (*openapi.Spec, error)
+	Load(ctx context.Context, uri *url.URL) (*openapi.Spec, error)
 }
 
 // Fetcher fetches Kubernetes resources and converts them into a filtered and simplified state.
@@ -144,17 +144,17 @@ func watchAll(ctx context.Context, clientSet clientset.Interface, traefikClientS
 		hub:           hubFactory,
 		traefik:       traefikFactory,
 		clientSet:     clientSet,
-		specs:         &openapi.Loader{},
+		specs:         openapi.NewLoader(),
 	}, nil
 }
 
 // FetchState assembles a cluster state from Kubernetes resources.
-func (f *Fetcher) FetchState() (*Cluster, error) {
+func (f *Fetcher) FetchState(ctx context.Context) (*Cluster, error) {
 	var cluster Cluster
 
 	var err error
 
-	cluster.Services, err = f.getServices()
+	cluster.Services, err = f.getServices(ctx)
 	if err != nil {
 		return nil, err
 	}
