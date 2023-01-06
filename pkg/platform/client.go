@@ -813,7 +813,7 @@ func (c *Client) GetCatalogs(ctx context.Context) ([]catalog.Catalog, error) {
 	return catalogs, nil
 }
 
-// UpdateCatalog updated a catalog.
+// UpdateCatalog updates a catalog.
 func (c *Client) UpdateCatalog(ctx context.Context, name, lastKnownVersion string, updateReq *UpdateCatalogReq) (*catalog.Catalog, error) {
 	body, err := json.Marshal(updateReq)
 	if err != nil {
