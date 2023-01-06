@@ -48,8 +48,8 @@ type Catalog struct {
 
 // CatalogSpec configures a Catalog.
 type CatalogSpec struct {
-	// Host is the hostname on which the API will be exposed.
-	Host string `json:"host,omitempty"`
+	// CustomDomain is the custom domain under which the API will be exposed.
+	CustomDomain string `json:"customDomain,omitempty"`
 	// Services are the list of Services available in the Catalog.
 	Services []CatalogService `json:"services,omitempty"`
 }
@@ -82,6 +82,9 @@ type CatalogStatus struct {
 
 	// URL is the URL for accessing the Catalog API.
 	URL string `json:"url"`
+
+	// Domain is the domain of the Catalog API.
+	Domain string `json:"domain"`
 
 	// SpecHash is a hash representing the CatalogSpec
 	SpecHash string `json:"specHash,omitempty"`

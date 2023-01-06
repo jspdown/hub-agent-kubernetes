@@ -98,9 +98,10 @@ func Test_WatcherRun(t *testing.T) {
 
 	catalogs := []Catalog{
 		{
-			Name:    "toCreate",
-			Version: "version-1",
-			Host:    "hello.example.com",
+			Name:         "toCreate",
+			Version:      "version-1",
+			CustomDomain: "hello.example.com",
+			Domain:       "majestic-beaver-123.hub-traefik.io",
 			Services: []hubv1alpha1.CatalogService{
 				{
 					Name:       "views",
@@ -113,6 +114,7 @@ func Test_WatcherRun(t *testing.T) {
 		{
 			Name:    "toUpdate",
 			Version: "version-2",
+			Domain:  "majestic-beaver-123.hub-traefik.io",
 			Services: []hubv1alpha1.CatalogService{
 				{
 					Name:       "users",
@@ -134,13 +136,14 @@ func Test_WatcherRun(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "toCreate"},
 			Spec: hubv1alpha1.CatalogSpec{
-				Host:     "hello.example.com",
-				Services: catalogs[0].Services,
+				CustomDomain: "hello.example.com",
+				Services:     catalogs[0].Services,
 			},
 			Status: hubv1alpha1.CatalogStatus{
 				Version:  "version-1",
 				URL:      "https://hello.example.com",
-				SpecHash: "xyOkzmI1awHVDNUdOdqu1UHVR/E=",
+				Domain:   "hello.example.com",
+				SpecHash: "R1wVWqcxKB+aCRi1oBnvTJhCpHU=",
 			},
 		},
 		{
@@ -150,6 +153,8 @@ func Test_WatcherRun(t *testing.T) {
 			},
 			Status: hubv1alpha1.CatalogStatus{
 				Version:  "version-2",
+				URL:      "https://majestic-beaver-123.hub-traefik.io",
+				Domain:   "majestic-beaver-123.hub-traefik.io",
 				SpecHash: "W1ABIs7KjEa8fb1ErTuS9SK0z6E=",
 			},
 		},

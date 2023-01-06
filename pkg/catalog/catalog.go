@@ -33,17 +33,12 @@ type Catalog struct {
 
 	Version string `json:"version"`
 
-	Host     string    `json:"host"`
-	Services []Service `json:"services,omitempty"`
+	Domain       string    `json:"domain"`
+	CustomDomain string    `json:"customDomain"`
+	Services     []Service `json:"services,omitempty"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-// CustomDomain holds domain information.
-type CustomDomain struct {
-	Name     string `json:"name"`
-	Verified bool   `json:"verified"`
 }
 
 // Service is a service within a catalog.
@@ -52,8 +47,8 @@ type Service = hubv1alpha1.CatalogService
 // Resource builds the v1alpha1 EdgeIngress resource.
 func (e *Catalog) Resource() (*hubv1alpha1.Catalog, error) {
 	spec := hubv1alpha1.CatalogSpec{
-		Host:     e.Host,
-		Services: e.Services,
+		CustomDomain: e.CustomDomain,
+		Services:     e.Services,
 	}
 
 	specHash, err := spec.Hash()
@@ -61,9 +56,9 @@ func (e *Catalog) Resource() (*hubv1alpha1.Catalog, error) {
 		return nil, fmt.Errorf("compute spec hash: %w", err)
 	}
 
-	var url string
-	if e.Host != "" {
-		url = "https://" + e.Host
+	domain := e.Domain
+	if e.CustomDomain != "" {
+		domain = e.CustomDomain
 	}
 
 	return &hubv1alpha1.Catalog{
@@ -72,7 +67,8 @@ func (e *Catalog) Resource() (*hubv1alpha1.Catalog, error) {
 		Status: hubv1alpha1.CatalogStatus{
 			Version:  e.Version,
 			SyncedAt: metav1.Now(),
-			URL:      url,
+			Domain:   domain,
+			URL:      "https://" + domain,
 			SpecHash: specHash,
 		},
 	}, nil
