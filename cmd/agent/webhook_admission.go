@@ -215,6 +215,7 @@ func setupAdmissionHandlers(ctx context.Context, platformClient *platform.Client
 	hubInformer.Hub().V1alpha1().IngressClasses().Informer().AddEventHandler(ingClassWatcher)
 	hubInformer.Hub().V1alpha1().AccessControlPolicies().Informer().AddEventHandler(acpEventHandler)
 	hubInformer.Hub().V1alpha1().EdgeIngresses().Informer()
+	hubInformer.Hub().V1alpha1().Catalogs().Informer()
 
 	hubInformer.Start(ctx.Done())
 

@@ -30,8 +30,9 @@ import (
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Catalog defines an catalog.
+// Catalog defines a catalog.
 // +kubebuilder:printcolumn:name="URL",type=string,JSONPath=`.status.url`
+// +kubebuilder:resource:scope=Cluster
 type Catalog struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
