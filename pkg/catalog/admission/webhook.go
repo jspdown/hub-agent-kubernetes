@@ -145,9 +145,9 @@ func (h Handler) reviewCreateOperation(ctx context.Context, c *hubv1alpha1.Catal
 	log.Ctx(ctx).Info().Msg("Creating Catalog resource")
 
 	createReq := &platform.CreateCatalogReq{
-		Name:         c.Name,
-		CustomDomain: c.Spec.CustomDomain,
-		Services:     c.Spec.Services,
+		Name:          c.Name,
+		CustomDomains: c.Spec.CustomDomains,
+		Services:      c.Spec.Services,
 	}
 
 	createdCatalog, err := h.backend.CreateCatalog(ctx, createReq)
@@ -162,8 +162,8 @@ func (h Handler) reviewUpdateOperation(ctx context.Context, oldCatalog, newCatal
 	log.Ctx(ctx).Info().Msg("Updating Catalog resource")
 
 	updateReq := &platform.UpdateCatalogReq{
-		CustomDomain: newCatalog.Spec.CustomDomain,
-		Services:     newCatalog.Spec.Services,
+		CustomDomains: newCatalog.Spec.CustomDomains,
+		Services:      newCatalog.Spec.Services,
 	}
 
 	updatedCatalog, err := h.backend.UpdateCatalog(ctx, oldCatalog.Name, oldCatalog.Status.Version, updateReq)

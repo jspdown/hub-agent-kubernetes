@@ -54,7 +54,7 @@ var toUpdate = hubv1alpha1.Catalog{
 	Status: hubv1alpha1.CatalogStatus{
 		Version:  "version-1",
 		SyncedAt: metav1.NewTime(time.Now().Add(-time.Hour)),
-		URL:      "https://sad-bat-456.hub-traefik.io",
+		URLs:     []string{"https://sad-bat-456.hub-traefik.io"},
 		SpecHash: "yxjMx+3w4R4B4YPzoGkqi/g9rLs=",
 	},
 }
@@ -80,7 +80,7 @@ var toDelete = hubv1alpha1.Catalog{
 	Status: hubv1alpha1.CatalogStatus{
 		Version:  "version-1",
 		SyncedAt: metav1.NewTime(time.Now().Add(-time.Hour)),
-		URL:      "https://broken-cat-123.hub-traefik.io",
+		URLs:     []string{"https://broken-cat-123.hub-traefik.io"},
 		SpecHash: "7kfh53DLsXumNEaO/nkeVYs/5CI=",
 	},
 }
@@ -98,10 +98,10 @@ func Test_WatcherRun(t *testing.T) {
 
 	catalogs := []Catalog{
 		{
-			Name:         "toCreate",
-			Version:      "version-1",
-			CustomDomain: "hello.example.com",
-			Domain:       "majestic-beaver-123.hub-traefik.io",
+			Name:          "toCreate",
+			Version:       "version-1",
+			CustomDomains: []string{"hello.example.com"},
+			Domain:        "majestic-beaver-123.hub-traefik.io",
 			Services: []hubv1alpha1.CatalogService{
 				{
 					Name:       "views",
@@ -136,14 +136,14 @@ func Test_WatcherRun(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "toCreate"},
 			Spec: hubv1alpha1.CatalogSpec{
-				CustomDomain: "hello.example.com",
-				Services:     catalogs[0].Services,
+				CustomDomains: []string{"hello.example.com"},
+				Services:      catalogs[0].Services,
 			},
 			Status: hubv1alpha1.CatalogStatus{
 				Version:  "version-1",
-				URL:      "https://hello.example.com",
-				Domain:   "hello.example.com",
-				SpecHash: "R1wVWqcxKB+aCRi1oBnvTJhCpHU=",
+				URLs:     []string{"https://hello.example.com"},
+				Domains:  []string{"hello.example.com"},
+				SpecHash: "+MBiHj7QfVFo+CKOe2AdHrOqatM=",
 			},
 		},
 		{
@@ -153,8 +153,8 @@ func Test_WatcherRun(t *testing.T) {
 			},
 			Status: hubv1alpha1.CatalogStatus{
 				Version:  "version-2",
-				URL:      "https://majestic-beaver-123.hub-traefik.io",
-				Domain:   "majestic-beaver-123.hub-traefik.io",
+				URLs:     []string{"https://majestic-beaver-123.hub-traefik.io"},
+				Domains:  []string{"majestic-beaver-123.hub-traefik.io"},
 				SpecHash: "W1ABIs7KjEa8fb1ErTuS9SK0z6E=",
 			},
 		},

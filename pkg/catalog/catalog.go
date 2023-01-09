@@ -33,9 +33,9 @@ type Catalog struct {
 
 	Version string `json:"version"`
 
-	Domain       string    `json:"domain"`
-	CustomDomain string    `json:"customDomain"`
-	Services     []Service `json:"services,omitempty"`
+	Domain        string    `json:"domain"`
+	CustomDomains []string  `json:"customDomains"`
+	Services      []Service `json:"services,omitempty"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -47,8 +47,8 @@ type Service = hubv1alpha1.CatalogService
 // Resource builds the v1alpha1 EdgeIngress resource.
 func (e *Catalog) Resource() (*hubv1alpha1.Catalog, error) {
 	spec := hubv1alpha1.CatalogSpec{
-		CustomDomain: e.CustomDomain,
-		Services:     e.Services,
+		CustomDomains: e.CustomDomains,
+		Services:      e.Services,
 	}
 
 	specHash, err := spec.Hash()
@@ -56,9 +56,17 @@ func (e *Catalog) Resource() (*hubv1alpha1.Catalog, error) {
 		return nil, fmt.Errorf("compute spec hash: %w", err)
 	}
 
-	domain := e.Domain
-	if e.CustomDomain != "" {
-		domain = e.CustomDomain
+	var domains []string
+	var urls []string
+	for _, customDomain := range e.CustomDomains {
+		domains = append(domains, customDomain)
+		urls = append(urls, "https://"+customDomain)
+	}
+
+	// As soon as a custom domain is provided we stop proposing the hub generated domain.
+	if len(domains) == 0 {
+		domains = []string{e.Domain}
+		urls = append(urls, "https://"+e.Domain)
 	}
 
 	return &hubv1alpha1.Catalog{
@@ -67,8 +75,8 @@ func (e *Catalog) Resource() (*hubv1alpha1.Catalog, error) {
 		Status: hubv1alpha1.CatalogStatus{
 			Version:  e.Version,
 			SyncedAt: metav1.Now(),
-			Domain:   domain,
-			URL:      "https://" + domain,
+			Domains:  domains,
+			URLs:     urls,
 			SpecHash: specHash,
 		},
 	}, nil

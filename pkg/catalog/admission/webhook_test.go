@@ -38,7 +38,7 @@ import (
 )
 
 var testCatalogSpec = hubv1alpha1.CatalogSpec{
-	CustomDomain: "foo.example.com",
+	CustomDomains: []string{"foo.example.com"},
 	Services: []hubv1alpha1.CatalogService{
 		{
 			Name:       "whoami",
@@ -78,19 +78,19 @@ func TestHandler_ServeHTTP_createOperation(t *testing.T) {
 		Response: &admv1.AdmissionResponse{},
 	}
 	wantCreateReq := &platform.CreateCatalogReq{
-		Name:         catalogName,
-		Services:     testCatalogSpec.Services,
-		CustomDomain: testCatalogSpec.CustomDomain,
+		Name:          catalogName,
+		Services:      testCatalogSpec.Services,
+		CustomDomains: testCatalogSpec.CustomDomains,
 	}
 	createdCatalog := &catalog.Catalog{
-		WorkspaceID:  "workspace-id",
-		ClusterID:    "cluster-id",
-		Name:         catalogName,
-		Version:      "version-1",
-		Services:     testCatalogSpec.Services,
-		CustomDomain: testCatalogSpec.CustomDomain,
-		CreatedAt:    time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
-		UpdatedAt:    time.Now().UTC().Truncate(time.Millisecond),
+		WorkspaceID:   "workspace-id",
+		ClusterID:     "cluster-id",
+		Name:          catalogName,
+		Version:       "version-1",
+		Services:      testCatalogSpec.Services,
+		CustomDomains: testCatalogSpec.CustomDomains,
+		CreatedAt:     time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
+		UpdatedAt:     time.Now().UTC().Truncate(time.Millisecond),
 	}
 
 	client := newBackendMock(t)
@@ -120,9 +120,9 @@ func TestHandler_ServeHTTP_createOperation(t *testing.T) {
 			{Op: "replace", Path: "/status", Value: hubv1alpha1.CatalogStatus{
 				Version:  "version-1",
 				SyncedAt: now,
-				URL:      "https://foo.example.com",
-				Domain:   "foo.example.com",
-				SpecHash: "xMwhl13TBkTboMCbeAB6tW9QZJE=",
+				URLs:     []string{"https://foo.example.com"},
+				Domains:  []string{"foo.example.com"},
+				SpecHash: "LekmJZ51xaHyapt8obKjf+/lg3M=",
 			}},
 		}),
 	}
@@ -200,7 +200,7 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: catalogName},
 		Spec: hubv1alpha1.CatalogSpec{
-			CustomDomain: "foo.example.com",
+			CustomDomains: []string{"foo.example.com"},
 			Services: []hubv1alpha1.CatalogService{
 				{
 					Name:       "new-whoami",
@@ -243,18 +243,18 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 		Response: &admv1.AdmissionResponse{},
 	}
 	wantUpdateReq := &platform.UpdateCatalogReq{
-		CustomDomain: newCatalog.Spec.CustomDomain,
-		Services:     newCatalog.Spec.Services,
+		CustomDomains: newCatalog.Spec.CustomDomains,
+		Services:      newCatalog.Spec.Services,
 	}
 	updatedCatalog := &catalog.Catalog{
-		WorkspaceID:  "workspace-id",
-		ClusterID:    "cluster-id",
-		Name:         catalogName,
-		Version:      "version-4",
-		CustomDomain: newCatalog.Spec.CustomDomain,
-		Services:     newCatalog.Spec.Services,
-		CreatedAt:    time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
-		UpdatedAt:    time.Now().UTC().Truncate(time.Millisecond),
+		WorkspaceID:   "workspace-id",
+		ClusterID:     "cluster-id",
+		Name:          catalogName,
+		Version:       "version-4",
+		CustomDomains: newCatalog.Spec.CustomDomains,
+		Services:      newCatalog.Spec.Services,
+		CreatedAt:     time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
+		UpdatedAt:     time.Now().UTC().Truncate(time.Millisecond),
 	}
 
 	client := newBackendMock(t)
@@ -285,9 +285,9 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 			{Op: "replace", Path: "/status", Value: hubv1alpha1.CatalogStatus{
 				Version:  "version-4",
 				SyncedAt: now,
-				Domain:   "foo.example.com",
-				URL:      "https://foo.example.com",
-				SpecHash: "J/8DUFxHvD3tQNCx2Ag1VZXF1D4=",
+				Domains:  []string{"foo.example.com"},
+				URLs:     []string{"https://foo.example.com"},
+				SpecHash: "rOG0fFXyK3/sUYGqjggW/ix7rFc=",
 			}},
 		}),
 	}
@@ -319,7 +319,7 @@ func TestHandler_ServeHTTP_updateOperationConflict(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{Name: catalogName},
 					Spec: hubv1alpha1.CatalogSpec{
-						CustomDomain: "foo.example.com",
+						CustomDomains: []string{"foo.example.com"},
 						Services: []hubv1alpha1.CatalogService{
 							{
 								Name:       "new-whoami",
