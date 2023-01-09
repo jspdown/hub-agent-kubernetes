@@ -120,7 +120,7 @@ func TestHandler_ServeHTTP_createOperation(t *testing.T) {
 			{Op: "replace", Path: "/status", Value: hubv1alpha1.CatalogStatus{
 				Version:  "version-1",
 				SyncedAt: now,
-				URLs:     []string{"https://foo.example.com"},
+				URLs:     "https://foo.example.com",
 				Domains:  []string{"foo.example.com"},
 				SpecHash: "LekmJZ51xaHyapt8obKjf+/lg3M=",
 			}},
@@ -286,7 +286,7 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 				Version:  "version-4",
 				SyncedAt: now,
 				Domains:  []string{"foo.example.com"},
-				URLs:     []string{"https://foo.example.com"},
+				URLs:     "https://foo.example.com",
 				SpecHash: "rOG0fFXyK3/sUYGqjggW/ix7rFc=",
 			}},
 		}),
