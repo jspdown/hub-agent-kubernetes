@@ -6,20 +6,29 @@
   },
   "servers": [
     {
-      "url": "https://generated.hub.domain/prefix/api/v3"
+      "url": "https://api.example.com/api-prefix/api/v3"
+    },
+    {
+      "url": "https://www.api.example.com/api-prefix/api/v3"
     }
   ],
   "paths": {
     "/users/{id}": {
       "servers": [
         {
-          "url": "https://generated.hub.domain/prefix/path-custom"
+          "url": "https://api.example.com/api-prefix/path-custom"
+        },
+        {
+          "url": "https://www.api.example.com/api-prefix/path-custom"
         }
       ],
       "get": {
         "servers": [
           {
-            "url": "https://generated.hub.domain/prefix/path-method"
+            "url": "https://api.example.com/api-prefix/path-method"
+          },
+          {
+            "url": "https://www.api.example.com/api-prefix/path-method"
           }
         ],
         "operationId": "getUserItem",
