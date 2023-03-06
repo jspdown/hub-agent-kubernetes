@@ -61,6 +61,8 @@ type ClientConfigAuth struct {
 
 // SecretReference represents a Secret Reference.
 // It has enough information to retrieve secret in any namespace.
+//
+//nolint:musttag // TODO must be fixed
 type SecretReference struct {
 	Name      string
 	Namespace string
