@@ -89,8 +89,8 @@ func TestPortalUI_ServeHTTP(t *testing.T) {
 			got, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
-			assert.Contains(t, string(got), fmt.Sprintf("catalogName=%q", p.Name))
-			assert.Contains(t, string(got), fmt.Sprintf("catalogDescription=%q", p.Spec.Description))
+			assert.Contains(t, string(got), fmt.Sprintf("portalName=%q", p.Name))
+			assert.Contains(t, string(got), fmt.Sprintf("portalDescription=%q", p.Spec.Description))
 		}
 	}
 }

@@ -40,7 +40,7 @@ var testPortal = portal{
 		APIGateway: hubv1alpha1.APIGateway{
 			ObjectMeta: metav1.ObjectMeta{Name: "my-gateway"},
 			Status: hubv1alpha1.APIGatewayStatus{
-				HubDomain: "api.example.com",
+				HubDomain: "majestic-beaver-123.hub-traefik.io",
 				CustomDomains: []string{
 					"api.my-company.example.com",
 				},
@@ -322,7 +322,7 @@ func TestPortalAPI_Router_getCollectionAPISpec_overrideServerAndAuth(t *testing.
 					APIGateway: hubv1alpha1.APIGateway{
 						ObjectMeta: metav1.ObjectMeta{Name: "my-gateway"},
 						Status: hubv1alpha1.APIGatewayStatus{
-							HubDomain: "hub.example.com",
+							HubDomain: "majestic-beaver-123.hub-traefik.io",
 						},
 					},
 					Collections: map[string]collection{
@@ -355,7 +355,7 @@ func TestPortalAPI_Router_getCollectionAPISpec_overrideServerAndAuth(t *testing.
 					APIGateway: hubv1alpha1.APIGateway{
 						ObjectMeta: metav1.ObjectMeta{Name: "my-gateway"},
 						Status: hubv1alpha1.APIGatewayStatus{
-							HubDomain: "hub.example.com",
+							HubDomain: "majestic-beaver-123.hub-traefik.io",
 						},
 					},
 					Collections: map[string]collection{
@@ -392,7 +392,7 @@ func TestPortalAPI_Router_getCollectionAPISpec_overrideServerAndAuth(t *testing.
 					APIGateway: hubv1alpha1.APIGateway{
 						ObjectMeta: metav1.ObjectMeta{Name: "my-gateway"},
 						Status: hubv1alpha1.APIGatewayStatus{
-							HubDomain: "hub.example.com",
+							HubDomain: "majestic-beaver-123.hub-traefik.io",
 							CustomDomains: []string{
 								"api.example.com",
 								"www.api.example.com",
@@ -538,7 +538,7 @@ func TestPortalAPI_Router_getAPISpec_overrideServerAndAuth(t *testing.T) {
 		Gateway: gateway{
 			APIGateway: hubv1alpha1.APIGateway{
 				ObjectMeta: metav1.ObjectMeta{Name: "my-gateway"},
-				Status:     hubv1alpha1.APIGatewayStatus{HubDomain: "hub.example.com"},
+				Status:     hubv1alpha1.APIGatewayStatus{HubDomain: "majestic-beaver-123.hub-traefik.io"},
 			},
 			APIs: map[string]hubv1alpha1.API{
 				"my-api@my-ns": {
