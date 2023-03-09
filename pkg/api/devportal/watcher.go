@@ -20,6 +20,7 @@ package devportal
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	hubv1alpha1 "github.com/traefik/hub-agent-kubernetes/pkg/crd/api/hub/v1alpha1"
@@ -27,6 +28,11 @@ import (
 	kerror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+)
+
+const (
+	debounceDelay    = 2 * time.Second
+	maxDebounceDelay = 10 * time.Second
 )
 
 type portal struct {
@@ -89,9 +95,11 @@ func NewWatcher(handler UpdatableHandler,
 
 // Run starts listening for changes on the cluster.
 func (w *Watcher) Run(ctx context.Context) {
+	refresh := debounce(ctx, w.refresh, debounceDelay, maxDebounceDelay)
+
 	for {
 		select {
-		case <-w.refresh:
+		case <-refresh:
 			portals, err := w.getPortals()
 			if err != nil {
 				log.Error().Err(err).Msg("Unable to get portals")
@@ -106,6 +114,41 @@ func (w *Watcher) Run(ctx context.Context) {
 			return
 		}
 	}
+}
+
+// debounce listen for events on the source chan and emit an event on the debounced channel after waiting for
+// the given `delay` duration. Each additional event will wait an additional `delay` duration until it reach
+// the `maxDelay`.
+func debounce(ctx context.Context, sourceCh <-chan struct{}, delay time.Duration, maxDelay time.Duration) <-chan struct{} {
+	debouncedCh := make(chan struct{})
+	var (
+		delayCh    <-chan time.Time
+		maxDelayCh <-chan time.Time
+	)
+
+	go func() {
+		for {
+			select {
+			case <-sourceCh:
+				delayCh = time.After(delay)
+				if maxDelayCh == nil {
+					maxDelayCh = time.After(maxDelay)
+				}
+
+			case <-delayCh:
+				delayCh, maxDelayCh = nil, nil
+				debouncedCh <- struct{}{}
+			case <-maxDelayCh:
+				delayCh, maxDelayCh = nil, nil
+				debouncedCh <- struct{}{}
+
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	return debouncedCh
 }
 
 // OnAdd implements Kubernetes cache.ResourceEventHandler so it can be used as an informer event handler.
