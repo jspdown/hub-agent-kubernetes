@@ -30,11 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-const (
-	debounceDelay    = 2 * time.Second
-	maxDebounceDelay = 10 * time.Second
-)
-
 type portal struct {
 	hubv1alpha1.APIPortal
 
@@ -67,7 +62,9 @@ type Watcher struct {
 	collections v1alpha1.APICollectionLister
 	accesses    v1alpha1.APIAccessLister
 
-	refresh chan struct{}
+	refresh          chan struct{}
+	debounceDelay    time.Duration
+	maxDebounceDelay time.Duration
 
 	handler UpdatableHandler
 }
@@ -88,14 +85,17 @@ func NewWatcher(handler UpdatableHandler,
 		collections: collections,
 		accesses:    accesses,
 
-		refresh: make(chan struct{}, 1),
+		refresh:          make(chan struct{}, 1),
+		debounceDelay:    2 * time.Second,
+		maxDebounceDelay: 10 * time.Second,
+
 		handler: handler,
 	}
 }
 
 // Run starts listening for changes on the cluster.
 func (w *Watcher) Run(ctx context.Context) {
-	refresh := debounce(ctx, w.refresh, debounceDelay, maxDebounceDelay)
+	refresh := debounce(ctx, w.refresh, w.debounceDelay, w.maxDebounceDelay)
 
 	for {
 		select {
@@ -119,7 +119,7 @@ func (w *Watcher) Run(ctx context.Context) {
 // debounce listen for events on the source chan and emit an event on the debounced channel after waiting for
 // the given `delay` duration. Each additional event will wait an additional `delay` duration until it reach
 // the `maxDelay`.
-func debounce(ctx context.Context, sourceCh <-chan struct{}, delay time.Duration, maxDelay time.Duration) <-chan struct{} {
+func debounce(ctx context.Context, sourceCh <-chan struct{}, delay, maxDelay time.Duration) <-chan struct{} {
 	debouncedCh := make(chan struct{})
 	var (
 		delayCh    <-chan time.Time

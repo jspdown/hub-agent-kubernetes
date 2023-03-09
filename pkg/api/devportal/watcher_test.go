@@ -94,7 +94,7 @@ func TestWatcher_Run(t *testing.T) {
 		}).
 		TypedReturns(nil)
 
-	w := NewWatcher(handler, portals, gateways, apis, collections, accesses)
+	w := setupWatcher(t, handler, portals, gateways, apis, collections, accesses)
 
 	// Simulate k8s resource change.
 	w.OnAdd(&hubv1alpha1.APIGateway{})
@@ -132,7 +132,7 @@ func TestWatcher_OnAdd(t *testing.T) {
 				}).
 				TypedReturns(nil)
 
-			w := NewWatcher(handler, portals, gateways, apis, collections, accesses)
+			w := setupWatcher(t, handler, portals, gateways, apis, collections, accesses)
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
@@ -180,7 +180,7 @@ func TestWatcher_OnDelete(t *testing.T) {
 				}).
 				TypedReturns(nil)
 
-			w := NewWatcher(handler, portals, gateways, apis, collections, accesses)
+			w := setupWatcher(t, handler, portals, gateways, apis, collections, accesses)
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
@@ -290,7 +290,7 @@ func TestWatcher_OnUpdate(t *testing.T) {
 				TypedReturns(nil).
 				Maybe()
 
-			w := NewWatcher(handler, portals, gateways, apis, collections, accesses)
+			w := setupWatcher(t, handler, portals, gateways, apis, collections, accesses)
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
@@ -421,4 +421,21 @@ func setupInformers(t *testing.T, clientSet *hubkubemock.Clientset) (listers.API
 	}
 
 	return portals, gateways, apis, collections, accesses
+}
+
+func setupWatcher(t *testing.T,
+	handler UpdatableHandler,
+	portals listers.APIPortalLister,
+	gateways listers.APIGatewayLister,
+	apis listers.APILister,
+	collections listers.APICollectionLister,
+	accesses listers.APIAccessLister,
+) *Watcher {
+	t.Helper()
+
+	w := NewWatcher(handler, portals, gateways, apis, collections, accesses)
+	w.debounceDelay = 0
+	w.maxDebounceDelay = 0
+
+	return w
 }
