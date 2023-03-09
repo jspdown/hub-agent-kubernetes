@@ -19,8 +19,9 @@ package state
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/runtime"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -119,6 +120,29 @@ func TestFetcher_GetAPIAccesses(t *testing.T) {
 	require.NoError(t, err)
 
 	got, err := f.getAPIAccesses()
+	require.NoError(t, err)
+
+	assert.Equal(t, want, got)
+}
+
+func TestFetcher_GetAPIPortals(t *testing.T) {
+	want := map[string]*APIPortal{
+		"portal": {
+			Name:          "portal",
+			Description:   "description",
+			APIGateway:    "api-gateway",
+			CustomDomains: []string{"example.com", "example.org"},
+			HubDomain:     "hub.example.com",
+		},
+	}
+
+	objects := loadK8sObjects(t, "fixtures/api/portal.yml")
+	kubeClient, traefikClient, hubClient := setupClientSets(objects)
+
+	f, err := watchAll(context.Background(), kubeClient, traefikClient, hubClient, "v1.20.1")
+	require.NoError(t, err)
+
+	got, err := f.getAPIPortals()
 	require.NoError(t, err)
 
 	assert.Equal(t, want, got)
