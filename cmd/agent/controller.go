@@ -129,7 +129,7 @@ func (c controllerCmd) run(cliCtx *cli.Context) error {
 		return fmt.Errorf("build platform client: %w", err)
 	}
 
-	configWatcher := platform.NewConfigWatcher(15*time.Minute, platformClient)
+	configWatcher := platform.NewConfigWatcher(time.Minute, platformClient)
 
 	heartbeater := heartbeat.NewHeartbeater(platformClient)
 

@@ -361,31 +361,33 @@ func setupAPIManagementWatcher(ctx context.Context, platformClient *platform.Cli
 		return fmt.Errorf("get config: %w", err)
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	var cancel func()
 
 	var watcherStarted bool
 	stopWatchers := func() {
 		cancel()
 		watcherStarted = false
 	}
-	startWatchers := func() {
-		go portalWatcher.Run(ctx)
-		go gatewayWatcher.Run(ctx)
-		go apiWatcher.Run(ctx)
-		go collectionWatcher.Run(ctx)
-		go accessWatcher.Run(ctx)
+	startWatchers := func(ctx context.Context) {
+		var apiCtx context.Context
+		apiCtx, cancel = context.WithCancel(ctx)
+		go portalWatcher.Run(apiCtx)
+		go gatewayWatcher.Run(apiCtx)
+		go apiWatcher.Run(apiCtx)
+		go collectionWatcher.Run(apiCtx)
+		go accessWatcher.Run(apiCtx)
 
 		watcherStarted = true
 	}
 
 	if slices.Contains(cfg.Features, apiManagementFeature) {
-		startWatchers()
+		startWatchers(ctx)
 	}
 
 	cfgWatcher.AddListener(func(cfg platform.Config) {
 		if slices.Contains(cfg.Features, apiManagementFeature) {
 			if !watcherStarted {
-				startWatchers()
+				startWatchers(ctx)
 			}
 		} else if watcherStarted {
 			stopWatchers()
