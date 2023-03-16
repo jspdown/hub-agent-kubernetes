@@ -348,29 +348,20 @@ func setupAdmissionHandlers(ctx context.Context, platformClient *platform.Client
 func setupAPIManagementWatcher(ctx context.Context, platformClient *platform.Client,
 	kubeClientSet *clientset.Clientset, hubClientSet *hubclientset.Clientset, traefikClientSet v1alpha1.TraefikV1alpha1Interface,
 	kubeInformer informers.SharedInformerFactory, hubInformer hubinformer.SharedInformerFactory,
-	portalWatcherCfg *api.WatcherPortalConfig, gatewayWatcherCfg *api.WatcherGatewayConfig, cfgWatcher *platform.ConfigWatcher) error {
-
+	portalWatcherCfg *api.WatcherPortalConfig, gatewayWatcherCfg *api.WatcherGatewayConfig, cfgWatcher *platform.ConfigWatcher,
+) error {
 	portalWatcher := api.NewWatcherPortal(platformClient, kubeClientSet, kubeInformer, hubClientSet, hubInformer, portalWatcherCfg)
 	gatewayWatcher := api.NewWatcherGateway(platformClient, kubeClientSet, kubeInformer, hubClientSet, hubInformer, traefikClientSet, gatewayWatcherCfg)
 	apiWatcher := api.NewWatcherAPI(platformClient, hubClientSet, hubInformer, portalWatcherCfg.PortalSyncInterval)
 	collectionWatcher := api.NewWatcherCollection(platformClient, hubClientSet, hubInformer, portalWatcherCfg.PortalSyncInterval)
 	accessWatcher := api.NewWatcherAccess(platformClient, hubClientSet, hubInformer, portalWatcherCfg.PortalSyncInterval)
 
-	cfg, err := platformClient.GetConfig(ctx)
-	if err != nil {
-		return fmt.Errorf("get config: %w", err)
-	}
-
 	var cancel func()
-
 	var watcherStarted bool
-	stopWatchers := func() {
-		cancel()
-		watcherStarted = false
-	}
 	startWatchers := func(ctx context.Context) {
 		var apiCtx context.Context
 		apiCtx, cancel = context.WithCancel(ctx)
+
 		go portalWatcher.Run(apiCtx)
 		go gatewayWatcher.Run(apiCtx)
 		go apiWatcher.Run(apiCtx)
@@ -378,6 +369,16 @@ func setupAPIManagementWatcher(ctx context.Context, platformClient *platform.Cli
 		go accessWatcher.Run(apiCtx)
 
 		watcherStarted = true
+	}
+
+	stopWatchers := func() {
+		cancel()
+		watcherStarted = false
+	}
+
+	cfg, err := platformClient.GetConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("get config: %w", err)
 	}
 
 	if slices.Contains(cfg.Features, apiManagementFeature) {
