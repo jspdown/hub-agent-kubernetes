@@ -290,12 +290,12 @@ func setupAdmissionHandlers(ctx context.Context, platformClient *platform.Client
 		return nil, nil, nil, fmt.Errorf("start kube informer: %w", err)
 	}
 
-	apiManagementCRDs, err := hasAPIManagementCRDs(kubeClientSet)
+	isAPIManagementCRDsAvailable, err := hasAPIManagementCRDs(kubeClientSet)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("API available: %w", err)
 	}
 
-	err = startHubInformer(ctx, hubInformer, ingClassWatcher, acpEventHandler, apiManagementCRDs)
+	err = startHubInformer(ctx, hubInformer, ingClassWatcher, acpEventHandler, isAPIManagementCRDsAvailable)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("start kube informer: %w", err)
 	}
@@ -311,7 +311,7 @@ func setupAdmissionHandlers(ctx context.Context, platformClient *platform.Client
 	go ingressUpdater.Run(ctx)
 	go edgeIngressWatcher.Run(ctx)
 
-	if apiManagementCRDs {
+	if isAPIManagementCRDsAvailable {
 		if err = setupAPIManagementWatcher(ctx,
 			platformClient, kubeClientSet, hubClientSet,
 			traefikClientSet, kubeInformer, hubInformer,
@@ -331,7 +331,7 @@ func setupAdmissionHandlers(ctx context.Context, platformClient *platform.Client
 		traefikReviewer,
 	}
 
-	if apiManagementCRDs {
+	if isAPIManagementCRDsAvailable {
 		rev := []apiadmission.Reviewer{
 			apireviewer.NewAPI(platformClient),
 			apireviewer.NewCollection(platformClient),
