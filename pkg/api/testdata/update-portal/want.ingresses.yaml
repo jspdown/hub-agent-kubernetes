@@ -18,7 +18,9 @@ spec:
     - host: hello.example.com
       http:
         paths:
-          - backend:
+          - pathType: Prefix
+            path: /
+            backend:
               service:
                 name: dev-portal-service-name
                 port:
@@ -26,14 +28,16 @@ spec:
     - host: new.example.com
       http:
         paths:
-          - backend:
+          - pathType: Prefix
+            path: /
+            backend:
               service:
                 name: dev-portal-service-name
                 port:
                   number: 8080
 
   tls:
-    - secretName: todo
+    - secretName: hub-certificate-portal-custom-domains-3118032615
       hosts:
         - hello.example.com
         - new.example.com

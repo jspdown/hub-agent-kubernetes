@@ -6,12 +6,13 @@ spec:
   description: "My modified portal"
   apiGateway: modified-gateway
   customDomains:
-    - "hello.example.com"
-    - "new.example.com"
+    - hello.example.com
+    - new.example.com
+    - not-yet-verified.example.com
 status:
   version: version-2
   customDomains:
     - hello.example.com
     - new.example.com
   urls: "https://hello.example.com,https://new.example.com,https://majestic-beaver-123.hub-traefik.io"
-  hash: "TPmQ8zirmkPDOXiXlQGIdg=="
+  hash: "zdk6mBG77PbDbF4reNC/gA=="
