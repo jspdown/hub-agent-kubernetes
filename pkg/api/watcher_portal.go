@@ -28,12 +28,14 @@ import (
 	hubclientset "github.com/traefik/hub-agent-kubernetes/pkg/crd/generated/client/hub/clientset/versioned"
 	hubinformer "github.com/traefik/hub-agent-kubernetes/pkg/crd/generated/client/hub/informers/externalversions"
 	"github.com/traefik/hub-agent-kubernetes/pkg/edgeingress"
+	netv1 "k8s.io/api/networking/v1"
 	kerror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	ktypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/utils/pointer"
 )
 
 // PlatformClient for the API service.
@@ -221,6 +223,14 @@ func (w *WatcherPortal) syncChildResources(ctx context.Context, portal *hubv1alp
 		return fmt.Errorf("upsert portal edge ingress: %w", err)
 	}
 
+	if len(portal.Status.CustomDomains) == 0 {
+		return nil
+	}
+
+	if err := w.upsertPortalIngress(ctx, portal); err != nil {
+		return fmt.Errorf("upsert portal ingress: %w", err)
+	}
+
 	return nil
 }
 
@@ -302,7 +312,114 @@ func (w *WatcherPortal) upsertPortalEdgeIngress(ctx context.Context, portal *hub
 	return nil
 }
 
-// getEdgeIngressPortalName compute the edge ingress portal name from the portal name.
+func (w *WatcherPortal) upsertPortalIngress(ctx context.Context, portal *hubv1alpha1.APIPortal) error {
+	ingressName, err := getIngressPortalName(portal.Name)
+	if err != nil {
+		return fmt.Errorf("get ingress name: %w", err)
+	}
+
+	existingIngress, err := w.kubeClientSet.NetworkingV1().Ingresses(w.config.AgentNamespace).Get(ctx, ingressName, metav1.GetOptions{})
+	if err != nil && !kerror.IsNotFound(err) {
+		return fmt.Errorf("get ingress: %w", err)
+	}
+
+	ingress := w.buildIngress(portal, ingressName)
+	if kerror.IsNotFound(err) {
+		_, err = w.kubeClientSet.NetworkingV1().Ingresses(w.config.AgentNamespace).Create(ctx, ingress, metav1.CreateOptions{})
+		if err != nil {
+			return fmt.Errorf("create ingress: %w", err)
+		}
+
+		log.Debug().
+			Str("name", ingress.Name).
+			Str("namespace", ingress.Namespace).
+			Msg("Ingress created")
+
+		return nil
+	}
+
+	existingIngress.Spec = ingress.Spec
+	// Override Annotations and Labels in case new values are added in the future.
+	existingIngress.ObjectMeta.Annotations = ingress.ObjectMeta.Annotations
+	existingIngress.ObjectMeta.Labels = ingress.ObjectMeta.Labels
+
+	_, err = w.kubeClientSet.NetworkingV1().Ingresses(ingress.Namespace).Update(ctx, existingIngress, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("update ingress: %w", err)
+	}
+
+	log.Debug().
+		Str("name", ingress.Name).
+		Str("namespace", ingress.Namespace).
+		Msg("Ingress updated")
+
+	return nil
+}
+
+func (w *WatcherPortal) buildIngress(portal *hubv1alpha1.APIPortal, name string) *netv1.Ingress {
+	rule := netv1.IngressRuleValue{
+		HTTP: &netv1.HTTPIngressRuleValue{
+			Paths: []netv1.HTTPIngressPath{
+				{
+					Backend: netv1.IngressBackend{
+						Service: &netv1.IngressServiceBackend{
+							Name: w.config.DevPortalServiceName,
+							Port: netv1.ServiceBackendPort{
+								Number: int32(w.config.DevPortalPort),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	var rules []netv1.IngressRule
+	for _, customDomain := range portal.Status.CustomDomains {
+		rules = append(rules, netv1.IngressRule{
+			Host:             customDomain,
+			IngressRuleValue: rule,
+		})
+	}
+
+	return &netv1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "networking.k8s.io/v1",
+			Kind:       "Ingress",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: w.config.AgentNamespace,
+			Annotations: map[string]string{
+				"traefik.ingress.kubernetes.io/router.tls":         "true",
+				"traefik.ingress.kubernetes.io/router.entrypoints": w.config.TraefikAPIEntryPoint,
+			},
+			Labels: map[string]string{
+				"app.kubernetes.io/managed-by": "traefik-hub",
+			},
+			// Set OwnerReference allow us to delete Ingresses owned by an APIPortal.
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: portal.APIVersion,
+					Kind:       portal.Kind,
+					Name:       portal.Name,
+					UID:        portal.UID,
+				},
+			},
+		},
+		Spec: netv1.IngressSpec{
+			IngressClassName: pointer.String(w.config.IngressClassName),
+			TLS: []netv1.IngressTLS{
+				{
+					Hosts:      portal.Status.CustomDomains,
+					SecretName: "todo",
+				},
+			},
+			Rules: rules,
+		},
+	}
+}
+
+// getEdgeIngressPortalName compute the name of the edge ingress of a portal.
 // The name follow this format: {portal-name}-{hash(portal-name)}-portal
 // This hash is here to reduce the chance of getting a collision on an existing ingress.
 func getEdgeIngressPortalName(portalName string) (string, error) {
@@ -314,6 +431,18 @@ func getEdgeIngressPortalName(portalName string) (string, error) {
 	// EdgeIngresses generate Ingresses with the same name. Therefore, to prevent any conflicts between the portal
 	// ingress and the portal ingresses the term "-portal" must be added as a suffix.
 	return fmt.Sprintf("%s-%d-portal", portalName, h), nil
+}
+
+// getIngressPortalName compute the name of the ingress of a portal.
+// The name follow this format: {portal-name}-{hash(portal-name)}-portal-ing
+// This hash is here to reduce the chance of getting a collision on an existing ingress.
+func getIngressPortalName(portalName string) (string, error) {
+	h, err := hash(portalName)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s-%d-portal-ing", portalName, h), nil
 }
 
 func hash(name string) (uint32, error) {
