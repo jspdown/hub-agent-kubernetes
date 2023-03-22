@@ -13,5 +13,5 @@ status:
   customDomains:
     - hello.example.com
     - new.example.com
-  urls: "https://hello.example.com,https://new.example.com"
-  hash: "vXdlUYnknGuQeeln2xLW8g=="
+  urls: "https://hello.example.com,https://new.example.com,https://majestic-beaver-123.hub-traefik.io"
+  hash: "TPmQ8zirmkPDOXiXlQGIdg=="

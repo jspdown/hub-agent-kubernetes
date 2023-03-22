@@ -13,9 +13,6 @@ spec:
   service:
     name: dev-portal-service-name
     port: 8080
-  customDomains:
-    - hello.example.com
-    - new.example.com
 
 ---
 # This EdgeIngress should have been deleted at the same time as the Portal,
@@ -35,6 +32,3 @@ spec:
   service:
     name: dev-portal-service-name
     port: 8080
-  customDomains:
-    - hello.example.com
-    - welcome.example.com

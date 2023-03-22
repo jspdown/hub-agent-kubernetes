@@ -255,7 +255,6 @@ func (w *WatcherPortal) upsertPortalEdgeIngress(ctx context.Context, portal *hub
 				Name: w.config.DevPortalServiceName,
 				Port: w.config.DevPortalPort,
 			},
-			CustomDomains: portal.Spec.CustomDomains,
 		},
 	}
 

@@ -71,9 +71,10 @@ func Test_WatcherRun(t *testing.T) {
 					Description: "My new portal",
 					Gateway:     "gateway",
 					Version:     "version-1",
-					CustomDomains: []string{
-						"hello.example.com",
-						"welcome.example.com",
+					HubDomain:   "majestic-beaver-123.hub-traefik.io",
+					CustomDomains: []CustomDomain{
+						{Name: "hello.example.com", Verified: true},
+						{Name: "welcome.example.com", Verified: true},
 					},
 				},
 			},
@@ -88,9 +89,10 @@ func Test_WatcherRun(t *testing.T) {
 					Description: "My modified portal",
 					Gateway:     "modified-gateway",
 					Version:     "version-2",
-					CustomDomains: []string{
-						"hello.example.com",
-						"new.example.com",
+					HubDomain:   "majestic-beaver-123.hub-traefik.io",
+					CustomDomains: []CustomDomain{
+						{Name: "hello.example.com", Verified: true},
+						{Name: "new.example.com", Verified: true},
 					},
 				},
 			},
