@@ -171,8 +171,8 @@ func Test_WatcherRun(t *testing.T) {
 			})
 
 			var wantCustomDomains []string
-			for _, platformGateway := range test.platformPortals {
-				for _, customDomain := range platformGateway.CustomDomains {
+			for _, platformPortal := range test.platformPortals {
+				for _, customDomain := range platformPortal.CustomDomains {
 					if customDomain.Verified {
 						wantCustomDomains = append(wantCustomDomains, customDomain.Name)
 					}
