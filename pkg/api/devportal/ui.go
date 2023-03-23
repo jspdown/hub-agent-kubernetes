@@ -117,15 +117,15 @@ func templatePortalIndexes(indexTemplate *template.Template, portals []portal) (
 
 // stripHostPort returns host without any trailing ":<port>".
 // https://github.com/golang/go/blob/cdf77c7209a497825b2956ec0360c6e7e4ae0acd/src/net/http/server.go#L2358-L2368
-func stripHostPort(h string) string {
+func stripHostPort(host string) string {
 	// If no port on host, return unchanged
-	if !strings.Contains(h, ":") {
+	if !strings.Contains(host, ":") {
 		return host
 	}
 
-	host, _, err := net.SplitHostPort(h)
+	h, _, err := net.SplitHostPort(host)
 	if err != nil {
-		return h // on error, return unchanged
+		return host // on error, return unchanged
 	}
-	return host
+	return h
 }
