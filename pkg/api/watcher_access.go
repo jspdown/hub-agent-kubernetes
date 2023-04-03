@@ -30,6 +30,69 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
+type AccessHandler struct {
+	hubClientSet hubclientset.Interface
+	hubInformer  hubinformers.SharedInformerFactory
+}
+
+func (w *AccessHandler) List() ([]*hubv1alpha1.APIAccess, error) {
+	accesses, err := w.hubInformer.Hub().V1alpha1().APIAccesses().Lister().List(labels.Everything())
+	if err != nil {
+		return nil, fmt.Errorf("list APIAccesses: %w", err)
+	}
+
+	return accesses, nil
+}
+
+func (w *AccessHandler) Create(ctx context.Context, new *hubv1alpha1.APIAccess) error {
+	_, err := w.hubClientSet.HubV1alpha1().APIAccesses().Create(ctx, new, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("creating APIAccess: %w", err)
+	}
+
+	log.Debug().
+		Str("name", new.Name).
+		Msg("APIAccess created")
+
+	return nil
+}
+
+func (w *AccessHandler) Update(ctx context.Context, old *hubv1alpha1.APIAccess, new *hubv1alpha1.APIAccess) error {
+	new.ObjectMeta = old.ObjectMeta
+	new.ObjectMeta.Labels = old.Labels
+
+	if new.Status.Version != old.Status.Version {
+		_, err := w.hubClientSet.HubV1alpha1().APIAccesses().Update(ctx, new, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("updating APIAccess: %w", err)
+		}
+
+		log.Debug().
+			Str("name", new.Name).
+			Msg("APIAccess updated")
+	}
+
+	return nil
+}
+
+func (w *AccessHandler) Delete(ctx context.Context, old *hubv1alpha1.APIAccess) error {
+	policy := metav1.DeletePropagationForeground
+
+	opts := metav1.DeleteOptions{
+		PropagationPolicy: &policy,
+	}
+	err := w.hubClientSet.HubV1alpha1().APIAccesses().Delete(ctx, old.Name, opts)
+	if err != nil {
+		return fmt.Errorf("deleting APIAccess: %w", err)
+	}
+
+	log.Debug().
+		Str("name", old.Name).
+		Msg("APIAccess deleted")
+
+	return nil
+}
+
 // WatcherAccess watches hub API accesses and sync them with the cluster.
 type WatcherAccess struct {
 	accessSyncInterval time.Duration
@@ -147,6 +210,7 @@ func (w *WatcherAccess) updateAccess(ctx context.Context, oldAccess *hubv1alpha1
 			return fmt.Errorf("updating APIAccess: %w", err)
 		}
 
+		obj.GetObjectMeta()
 		log.Debug().
 			Str("name", obj.Name).
 			Msg("APIAccess updated")

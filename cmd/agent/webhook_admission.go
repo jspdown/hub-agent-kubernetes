@@ -356,7 +356,9 @@ func setupAPIManagementWatcher(ctx context.Context, platformClient *platform.Cli
 	gatewayWatcher := api.NewWatcherGateway(platformClient, kubeClientSet, kubeInformer, hubClientSet, hubInformer, traefikClientSet, gatewayWatcherCfg)
 	apiWatcher := api.NewWatcherAPI(platformClient, hubClientSet, hubInformer, portalWatcherCfg.PortalSyncInterval)
 	collectionWatcher := api.NewWatcherCollection(platformClient, hubClientSet, hubInformer, portalWatcherCfg.PortalSyncInterval)
-	accessWatcher := api.NewWatcherAccess(platformClient, hubClientSet, hubInformer, portalWatcherCfg.PortalSyncInterval)
+	//accessWatcher := api.NewWatcherAccess(platformClient, hubClientSet, hubInformer, portalWatcherCfg.PortalSyncInterval)
+
+	accessWatcher := platform.NewResourceSyncer(platformClient.GetAccesses, &api.AccessHandler{})
 
 	var cancel func()
 	var watcherStarted bool
