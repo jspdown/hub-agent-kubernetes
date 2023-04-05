@@ -2866,7 +2866,7 @@ func TestClient_DeleteAccess(t *testing.T) {
 					return
 				}
 				if req.Header.Get("Last-Known-Version") != "oldAccessVersion" {
-					http.Error(rw, "Invalid token", http.StatusInternalServerError)
+					http.Error(rw, "Invalid last known version", http.StatusInternalServerError)
 					return
 				}
 
@@ -2882,6 +2882,237 @@ func TestClient_DeleteAccess(t *testing.T) {
 			c.httpClient = srv.Client()
 
 			err = c.DeleteAccess(context.Background(), test.name, "oldAccessVersion")
+			test.wantErr(t, err)
+
+			require.Equal(t, 1, callCount)
+		})
+	}
+}
+
+func TestClient_CreateUserToken(t *testing.T) {
+	tests := []struct {
+		desc             string
+		userEmail        string
+		tokenName        string
+		returnStatusCode int
+		wantErr          assert.ErrorAssertionFunc
+	}{
+		{
+			desc:             "create user token",
+			userEmail:        "example@example.com",
+			tokenName:        "token",
+			returnStatusCode: http.StatusCreated,
+			wantErr:          assert.NoError,
+		},
+		{
+			desc:             "conflict error",
+			userEmail:        "example@example.com",
+			tokenName:        "token",
+			returnStatusCode: http.StatusConflict,
+			wantErr:          assert.Error,
+		},
+		{
+			desc:             "not found error",
+			userEmail:        "example@example.com",
+			tokenName:        "token",
+			returnStatusCode: http.StatusNotFound,
+			wantErr:          assert.Error,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+
+			var callCount int
+			mux := http.NewServeMux()
+			mux.HandleFunc("/users/"+test.userEmail+"/tokens", func(rw http.ResponseWriter, req *http.Request) {
+				callCount++
+
+				if req.Method != http.MethodPost {
+					http.Error(rw, fmt.Sprintf("unexpected method: %s", req.Method), http.StatusMethodNotAllowed)
+					return
+				}
+
+				if req.Header.Get("Authorization") != "Bearer "+testToken {
+					http.Error(rw, "Invalid token", http.StatusUnauthorized)
+					return
+				}
+
+				got, err := io.ReadAll(req.Body)
+				require.NoError(t, err)
+
+				if string(got) != `{"tokenName":"`+test.tokenName+`"}` {
+					http.Error(rw, "Invalid token name", http.StatusBadRequest)
+					return
+				}
+
+				rw.WriteHeader(test.returnStatusCode)
+				if test.returnStatusCode == http.StatusCreated {
+					_, err = rw.Write([]byte(`{"tokenValue":"token-value"}`))
+					require.NoError(t, err)
+				}
+			})
+
+			srv := httptest.NewServer(mux)
+
+			t.Cleanup(srv.Close)
+
+			c, err := NewClient(srv.URL, testToken)
+			require.NoError(t, err)
+			c.httpClient = srv.Client()
+
+			createdToken, err := c.CreateUserToken(context.Background(), test.userEmail, test.tokenName)
+			test.wantErr(t, err)
+
+			require.Equal(t, 1, callCount)
+			if test.returnStatusCode == http.StatusCreated {
+				assert.Equal(t, "token-value", createdToken)
+			}
+		})
+	}
+}
+
+func TestClient_SuspendUserToken(t *testing.T) {
+	tests := []struct {
+		desc             string
+		userEmail        string
+		tokenName        string
+		suspend          bool
+		returnStatusCode int
+		wantErr          assert.ErrorAssertionFunc
+	}{
+		{
+			desc:             "suspend user token",
+			userEmail:        "example@example.com",
+			tokenName:        "token",
+			suspend:          true,
+			returnStatusCode: http.StatusOK,
+			wantErr:          assert.NoError,
+		},
+		{
+			desc:             "not found error",
+			userEmail:        "example@example.com",
+			tokenName:        "token",
+			suspend:          true,
+			returnStatusCode: http.StatusNotFound,
+			wantErr:          assert.Error,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+
+			var callCount int
+			mux := http.NewServeMux()
+			mux.HandleFunc("/users/"+test.userEmail+"/tokens/suspend", func(rw http.ResponseWriter, req *http.Request) {
+				callCount++
+
+				if req.Method != http.MethodPost {
+					http.Error(rw, fmt.Sprintf("unexpected method: %s", req.Method), http.StatusMethodNotAllowed)
+					return
+				}
+
+				if req.Header.Get("Authorization") != "Bearer "+testToken {
+					http.Error(rw, "Invalid token", http.StatusUnauthorized)
+					return
+				}
+
+				var gotReq SuspendTokenReq
+				err := json.NewDecoder(req.Body).Decode(&gotReq)
+				require.NoError(t, err)
+
+				if gotReq.TokenName != test.tokenName || gotReq.Suspend != test.suspend {
+					http.Error(rw, "Invalid token name", http.StatusBadRequest)
+					return
+				}
+
+				rw.WriteHeader(test.returnStatusCode)
+			})
+
+			srv := httptest.NewServer(mux)
+
+			t.Cleanup(srv.Close)
+
+			c, err := NewClient(srv.URL, testToken)
+			require.NoError(t, err)
+			c.httpClient = srv.Client()
+
+			err = c.SuspendUserToken(context.Background(), test.userEmail, test.tokenName, test.suspend)
+			test.wantErr(t, err)
+
+			require.Equal(t, 1, callCount)
+		})
+	}
+}
+
+func TestClient_DeleteUserToken(t *testing.T) {
+	tests := []struct {
+		desc             string
+		userEmail        string
+		tokenName        string
+		returnStatusCode int
+		wantErr          assert.ErrorAssertionFunc
+	}{
+		{
+			desc:             "suspend user token",
+			userEmail:        "example@example.com",
+			tokenName:        "token",
+			returnStatusCode: http.StatusNoContent,
+			wantErr:          assert.NoError,
+		},
+		{
+			desc:             "not found error",
+			userEmail:        "example@example.com",
+			tokenName:        "token",
+			returnStatusCode: http.StatusNotFound,
+			wantErr:          assert.Error,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+
+			var callCount int
+			mux := http.NewServeMux()
+			mux.HandleFunc("/users/"+test.userEmail+"/tokens", func(rw http.ResponseWriter, req *http.Request) {
+				callCount++
+
+				if req.Method != http.MethodDelete {
+					http.Error(rw, fmt.Sprintf("unexpected method: %s", req.Method), http.StatusMethodNotAllowed)
+					return
+				}
+
+				if req.Header.Get("Authorization") != "Bearer "+testToken {
+					http.Error(rw, "Invalid token", http.StatusUnauthorized)
+					return
+				}
+
+				got, err := io.ReadAll(req.Body)
+				require.NoError(t, err)
+
+				if string(got) != `{"tokenName":"`+test.tokenName+`"}` {
+					http.Error(rw, "Invalid token name", http.StatusBadRequest)
+					return
+				}
+
+				rw.WriteHeader(test.returnStatusCode)
+			})
+
+			srv := httptest.NewServer(mux)
+
+			t.Cleanup(srv.Close)
+
+			c, err := NewClient(srv.URL, testToken)
+			require.NoError(t, err)
+			c.httpClient = srv.Client()
+
+			err = c.DeleteUserToken(context.Background(), test.userEmail, test.tokenName)
 			test.wantErr(t, err)
 
 			require.Equal(t, 1, callCount)
