@@ -194,12 +194,6 @@ type UpdateAccessReq struct {
 	APICollectionSelector *metav1.LabelSelector `json:"apiCollectionSelector,omitempty"`
 }
 
-// SuspendTokenReq is a request for suspending a token for a user.
-type SuspendTokenReq struct {
-	TokenName string `json:"tokenName"`
-	Suspend   bool   `json:"suspend"`
-}
-
 // Command defines patch operation to apply on the cluster.
 type Command struct {
 	ID        string          `json:"id"`

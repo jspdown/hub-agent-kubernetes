@@ -2992,6 +2992,14 @@ func TestClient_SuspendUserToken(t *testing.T) {
 			wantErr:          assert.NoError,
 		},
 		{
+			desc:             "unsuspend user token",
+			userEmail:        "example@example.com",
+			tokenName:        "token",
+			suspend:          false,
+			returnStatusCode: http.StatusOK,
+			wantErr:          assert.NoError,
+		},
+		{
 			desc:             "not found error",
 			userEmail:        "example@example.com",
 			tokenName:        "token",
@@ -3021,11 +3029,14 @@ func TestClient_SuspendUserToken(t *testing.T) {
 					return
 				}
 
-				var gotReq SuspendTokenReq
-				err := json.NewDecoder(req.Body).Decode(&gotReq)
+				var got struct {
+					TokenName string `json:"tokenName"`
+					Suspend   bool   `json:"suspend"`
+				}
+				err := json.NewDecoder(req.Body).Decode(&got)
 				require.NoError(t, err)
 
-				if gotReq.TokenName != test.tokenName || gotReq.Suspend != test.suspend {
+				if got.TokenName != test.tokenName || got.Suspend != test.suspend {
 					http.Error(rw, "Invalid token name", http.StatusBadRequest)
 					return
 				}
