@@ -195,8 +195,7 @@ func (p *PortalAPI) handleSuspendToken(rw http.ResponseWriter, r *http.Request) 
 }
 
 type deleteTokenReq struct {
-	Name    string `json:"name"`
-	Suspend bool   `json:"suspend"`
+	Name string `json:"name"`
 }
 
 func (p *PortalAPI) handleDeleteToken(rw http.ResponseWriter, r *http.Request) {

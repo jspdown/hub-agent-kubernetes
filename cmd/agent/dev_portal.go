@@ -53,7 +53,7 @@ func newDevPortalCmd() devPortalCmd {
 		},
 		&cli.StringFlag{
 			Name:    flagPlatformURL,
-			Usage:   "The URL at which to reach the Hub platform API",
+			Usage:   "The URL to reach the Hub platform API",
 			Value:   "https://platform.hub.traefik.io/agent",
 			EnvVars: []string{strcase.ToSNAKE(flagPlatformURL)},
 			Hidden:  true,
