@@ -211,6 +211,71 @@ var testPortal = portal{
 	},
 }
 
+func TestPortalAPI_Router_listTokens(t *testing.T) {
+	tests := []struct {
+		desc           string
+		tokens         []platform.Token
+		platformErr    error
+		wantStatusCode int
+	}{
+		{
+			desc: "list tokens",
+			tokens: []platform.Token{
+				{Name: "token-1", Suspended: false},
+				{Name: "token-2", Suspended: true},
+			},
+			wantStatusCode: http.StatusOK,
+		},
+		{
+			desc: "not found",
+			platformErr: platform.APIError{
+				StatusCode: http.StatusNotFound,
+				Message:    "conflict",
+			},
+			wantStatusCode: http.StatusNotFound,
+		},
+		{
+			desc:           "unexpected platform error",
+			platformErr:    errors.New("boom"),
+			wantStatusCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+
+			platformClient := newPlatformClientMock(t)
+			platformClient.OnListUserTokens(testEmail).TypedReturns(test.tokens, test.platformErr)
+
+			a, err := NewPortalAPI(&testPortal, platformClient)
+			require.NoError(t, err)
+
+			srv := httptest.NewServer(a)
+
+			req, err := http.NewRequest(http.MethodGet, srv.URL+"/tokens", http.NoBody)
+			require.NoError(t, err)
+
+			req.Header.Add("Hub-Email", testEmail)
+			req.Header.Add("Hub-Groups", "supplier")
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+
+			require.Equal(t, test.wantStatusCode, resp.StatusCode)
+			if test.wantStatusCode == http.StatusOK {
+				var got []platform.Token
+				err = json.NewDecoder(resp.Body).Decode(&got)
+				require.NoError(t, err)
+
+				assert.Equal(t, test.tokens, got)
+			}
+		})
+	}
+}
+
 func TestPortalAPI_Router_createToken(t *testing.T) {
 	tests := []struct {
 		desc           string

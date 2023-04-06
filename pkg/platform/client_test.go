@@ -2889,6 +2889,86 @@ func TestClient_DeleteAccess(t *testing.T) {
 	}
 }
 
+func TestClient_ListUserToken(t *testing.T) {
+	tests := []struct {
+		desc             string
+		userEmail        string
+		tokens           []Token
+		returnStatusCode int
+		wantErr          assert.ErrorAssertionFunc
+	}{
+		{
+			desc:      "list tokens",
+			userEmail: "example@example.com",
+			tokens: []Token{
+				{Name: "token-1", Suspended: false},
+				{Name: "token-2", Suspended: true},
+			},
+			returnStatusCode: http.StatusOK,
+			wantErr:          assert.NoError,
+		},
+		{
+			desc:             "user not found",
+			userEmail:        "example@example.com",
+			returnStatusCode: http.StatusNotFound,
+			wantErr:          assert.Error,
+		},
+		{
+			desc:             "unexpected error",
+			userEmail:        "example@example.com",
+			returnStatusCode: http.StatusInternalServerError,
+			wantErr:          assert.Error,
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.desc, func(t *testing.T) {
+			t.Parallel()
+
+			var callCount int
+			mux := http.NewServeMux()
+			mux.HandleFunc("/users/"+test.userEmail+"/tokens", func(rw http.ResponseWriter, req *http.Request) {
+				callCount++
+
+				if req.Method != http.MethodGet {
+					http.Error(rw, fmt.Sprintf("unexpected method: %s", req.Method), http.StatusMethodNotAllowed)
+					return
+				}
+
+				if req.Header.Get("Authorization") != "Bearer "+testToken {
+					http.Error(rw, "Invalid token", http.StatusUnauthorized)
+					return
+				}
+
+				if test.returnStatusCode == http.StatusOK {
+					err := json.NewEncoder(rw).Encode(test.tokens)
+					require.NoError(t, err)
+				}
+
+				rw.WriteHeader(test.returnStatusCode)
+			})
+
+			srv := httptest.NewServer(mux)
+
+			t.Cleanup(srv.Close)
+
+			c, err := NewClient(srv.URL, testToken)
+			require.NoError(t, err)
+			c.httpClient = srv.Client()
+
+			got, err := c.ListUserTokens(context.Background(), test.userEmail)
+			test.wantErr(t, err)
+
+			if test.returnStatusCode == http.StatusOK {
+				assert.Equal(t, test.tokens, got)
+			}
+
+			require.Equal(t, 1, callCount)
+		})
+	}
+}
+
 func TestClient_CreateUserToken(t *testing.T) {
 	tests := []struct {
 		desc             string

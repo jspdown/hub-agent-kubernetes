@@ -24,10 +24,12 @@ import (
 	"sync"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/traefik/hub-agent-kubernetes/pkg/platform"
 )
 
 // PlatformClient can manage user tokens.
 type PlatformClient interface {
+	ListUserTokens(ctx context.Context, userEmail string) ([]platform.Token, error)
 	CreateUserToken(ctx context.Context, userEmail, tokenName string) (string, error)
 	SuspendUserToken(ctx context.Context, userEmail, tokenName string, suspend bool) error
 	DeleteUserToken(ctx context.Context, userEmail, tokenName string) error

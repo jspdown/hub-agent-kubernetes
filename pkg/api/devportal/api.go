@@ -69,6 +69,7 @@ func NewPortalAPI(portal *portal, platformClient PlatformClient) (*PortalAPI, er
 	p.router.Get("/apis", p.handleListAPIs)
 	p.router.Get("/apis/{api}", p.handleGetAPISpec)
 	p.router.Get("/collections/{collection}/apis/{api}", p.handleGetCollectionAPISpec)
+	p.router.Get("/tokens", p.handleListTokens)
 	p.router.Post("/tokens", p.handleCreateToken)
 	p.router.Post("/tokens/suspend", p.handleSuspendToken)
 	p.router.Delete("/tokens", p.handleDeleteToken)
@@ -79,6 +80,39 @@ func NewPortalAPI(portal *portal, platformClient PlatformClient) (*PortalAPI, er
 // ServeHTTP serves HTTP requests.
 func (p *PortalAPI) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	p.router.ServeHTTP(rw, req)
+}
+
+func (p *PortalAPI) handleListTokens(rw http.ResponseWriter, r *http.Request) {
+	logger := log.With().Str("portal_name", p.portal.Name).Logger()
+
+	userEmail := r.Header.Get(headerHubEmail)
+	if userEmail == "" {
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	tokens, err := p.platform.ListUserTokens(r.Context(), userEmail)
+	if err != nil {
+		logger.Error().Err(err).Msg("Unable to list user tokens")
+
+		apiErr := platform.APIError{}
+		if !errors.As(err, &apiErr) {
+			rw.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		rw.WriteHeader(apiErr.StatusCode)
+		return
+	}
+
+	if tokens == nil {
+		tokens = make([]platform.Token, 0)
+	}
+
+	rw.WriteHeader(http.StatusOK)
+	if err = json.NewEncoder(rw).Encode(tokens); err != nil {
+		logger.Error().Err(err).Msg("Unable to list user tokens")
+	}
 }
 
 type createTokenReq struct {

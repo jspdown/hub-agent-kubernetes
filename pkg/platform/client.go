@@ -202,6 +202,12 @@ type Command struct {
 	Data      json.RawMessage `json:"data"`
 }
 
+// Token is a user token used for API management.
+type Token struct {
+	Name      string `json:"name"`
+	Suspended bool   `json:"suspended"`
+}
+
 // CommandExecutionStatus describes the execution status of a command.
 type CommandExecutionStatus string
 
@@ -488,6 +494,46 @@ func (c *Client) ListVerifiedDomains(ctx context.Context) ([]string, error) {
 	}
 
 	return domains, nil
+}
+
+// ListUserTokens lists the token of a user.
+func (c *Client) ListUserTokens(ctx context.Context, userEmail string) ([]Token, error) {
+	baseURL, err := c.baseURL.Parse(path.Join(c.baseURL.Path, "users", userEmail, "tokens"))
+	if err != nil {
+		return nil, fmt.Errorf("parse endpoint: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL.String(), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	version.SetUserAgent(req)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		all, _ := io.ReadAll(resp.Body)
+
+		apiErr := APIError{StatusCode: resp.StatusCode}
+		if err = json.Unmarshal(all, &apiErr); err != nil {
+			apiErr.Message = string(all)
+		}
+
+		return nil, apiErr
+	}
+
+	var tokens []Token
+	if err = json.NewDecoder(resp.Body).Decode(&tokens); err != nil {
+		return nil, fmt.Errorf("decode response: %w", err)
+	}
+
+	return tokens, nil
 }
 
 // CreateUserToken creates a token for a user.
