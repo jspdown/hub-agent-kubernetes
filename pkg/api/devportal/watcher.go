@@ -431,33 +431,33 @@ func mergeAPIs(oldAPIs, newAPIs map[string]api) {
 
 func mergeCollections(oldCols, newCols map[string]collection) {
 	for collectionName, c := range newCols {
-		if _, ok := oldCols[collectionName]; ok {
-			groups := mergeGroups(oldCols[collectionName].authorizedGroups, c.authorizedGroups)
-
-			apis := make(map[string]api)
-			for k, a := range oldCols[collectionName].APIs {
-				apis[k] = api{API: a.API, authorizedGroups: groups}
-			}
-
-			for k, a := range c.APIs {
-				if _, ok = apis[k]; !ok {
-					apis[k] = api{API: a.API, authorizedGroups: groups}
-				}
-			}
-
-			for apiNameNamespace, a := range oldCols[collectionName].APIs {
-				apis[apiNameNamespace] = api{API: a.API, authorizedGroups: groups}
-			}
-
-			oldCols[collectionName] = collection{
-				APICollection:    oldCols[collectionName].APICollection,
-				APIs:             apis,
-				authorizedGroups: groups,
-			}
+		if _, ok := oldCols[collectionName]; !ok {
+			oldCols[collectionName] = newCols[collectionName]
 			continue
 		}
 
-		oldCols[collectionName] = newCols[collectionName]
+		groups := mergeGroups(oldCols[collectionName].authorizedGroups, c.authorizedGroups)
+
+		apis := make(map[string]api)
+		for k, a := range oldCols[collectionName].APIs {
+			apis[k] = api{API: a.API, authorizedGroups: groups}
+		}
+
+		for k, a := range c.APIs {
+			if _, ok := apis[k]; !ok {
+				apis[k] = api{API: a.API, authorizedGroups: groups}
+			}
+		}
+
+		for apiNameNamespace, a := range oldCols[collectionName].APIs {
+			apis[apiNameNamespace] = api{API: a.API, authorizedGroups: groups}
+		}
+
+		oldCols[collectionName] = collection{
+			APICollection:    oldCols[collectionName].APICollection,
+			APIs:             apis,
+			authorizedGroups: groups,
+		}
 	}
 }
 
