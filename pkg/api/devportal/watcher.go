@@ -417,15 +417,15 @@ func (w *Watcher) findCollections(labelSelector *metav1.LabelSelector, authorize
 
 func mergeAPIs(oldAPIs, newAPIs map[string]api) {
 	for k, a := range newAPIs {
-		if _, ok := oldAPIs[k]; ok {
-			oldAPIs[k] = api{
-				API:              oldAPIs[k].API,
-				authorizedGroups: mergeGroups(oldAPIs[k].authorizedGroups, a.authorizedGroups),
-			}
+		if _, ok := oldAPIs[k]; !ok {
+			oldAPIs[k] = newAPIs[k]
 			continue
 		}
 
-		oldAPIs[k] = newAPIs[k]
+		oldAPIs[k] = api{
+			API:              oldAPIs[k].API,
+			authorizedGroups: mergeGroups(oldAPIs[k].authorizedGroups, a.authorizedGroups),
+		}
 	}
 }
 
