@@ -23,14 +23,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"path"
 
 	"github.com/traefik/hub-agent-kubernetes/pkg/version"
 )
 
 // GetUserGroups get the groups of a user given its email address.
 func (c *Client) GetUserGroups(ctx context.Context, userEmail string) ([]string, error) {
-	baseURL := c.baseURL.JoinPath( "users", userEmail, "groups"))
+	baseURL := c.baseURL.JoinPath("users", userEmail, "groups")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL.String(), http.NoBody)
 	if err != nil {
