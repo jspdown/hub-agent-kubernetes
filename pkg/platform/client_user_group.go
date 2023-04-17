@@ -30,10 +30,7 @@ import (
 
 // GetUserGroups get the groups of a user given its email address.
 func (c *Client) GetUserGroups(ctx context.Context, userEmail string) ([]string, error) {
-	baseURL, err := c.baseURL.Parse(path.Join(c.baseURL.Path, "users", userEmail, "groups"))
-	if err != nil {
-		return nil, fmt.Errorf("parse endpoint: %w", err)
-	}
+	baseURL := c.baseURL.JoinPath( "users", userEmail, "groups"))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL.String(), http.NoBody)
 	if err != nil {
