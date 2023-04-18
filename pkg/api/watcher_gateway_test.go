@@ -194,7 +194,6 @@ func Test_WatcherGatewayRun(t *testing.T) {
 
 			clusterGateways := loadFixtures[hubv1alpha1.APIGateway](t, test.clusterGateways)
 			clusterAccesses := loadFixtures[hubv1alpha1.APIAccess](t, test.clusterAccesses)
-
 			clusterCollections := loadFixtures[hubv1alpha1.APICollection](t, test.clusterCollections)
 			clusterAPIs := loadFixtures[hubv1alpha1.API](t, test.clusterAPIs)
 			clusterIngresses := loadFixtures[netv1.Ingress](t, test.clusterIngresses)
