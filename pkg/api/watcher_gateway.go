@@ -511,6 +511,7 @@ func resolvedAPIKey(collection *hubv1alpha1.APICollection, api *hubv1alpha1.API)
 	if collection == nil {
 		return api.Name + "@" + api.Namespace
 	}
+
 	return collection.Name + "@" + api.Name + "@" + api.Namespace
 }
 
