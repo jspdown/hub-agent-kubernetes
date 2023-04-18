@@ -77,7 +77,7 @@ func Test_WatcherGatewayRun(t *testing.T) {
 				{
 					Name:      "new-gateway",
 					Labels:    map[string]string{"area": "stores"},
-					Accesses:  []string{"products", "supply-chain"},
+					Accesses:  []string{"products", "supply-chain", "admin"},
 					Version:   "version-1",
 					HubDomain: "brave-lion-123.hub-traefik.io",
 					CustomDomains: []CustomDomain{
@@ -194,6 +194,7 @@ func Test_WatcherGatewayRun(t *testing.T) {
 
 			clusterGateways := loadFixtures[hubv1alpha1.APIGateway](t, test.clusterGateways)
 			clusterAccesses := loadFixtures[hubv1alpha1.APIAccess](t, test.clusterAccesses)
+
 			clusterCollections := loadFixtures[hubv1alpha1.APICollection](t, test.clusterCollections)
 			clusterAPIs := loadFixtures[hubv1alpha1.API](t, test.clusterAPIs)
 			clusterIngresses := loadFixtures[netv1.Ingress](t, test.clusterIngresses)
