@@ -789,15 +789,9 @@ func (w *WatcherGateway) cleanupNamespaces(ctx context.Context, gateway *hubv1al
 }
 
 func (w *WatcherGateway) upsertIngressesOnNamespace(ctx context.Context, namespace string, gateway *hubv1alpha1.APIGateway, resolvedAPIs []resolvedAPI, traefikMiddlewareNames []string) error {
-	managedByHub, err := labels.NewRequirement("app.kubernetes.io/managed-by", selection.Equals, []string{"traefik-hub"})
+	ingresses, err := w.listGatewayIngresses(namespace, gateway.Name)
 	if err != nil {
-		return fmt.Errorf("create managed by hub requirement: %w", err)
-	}
-	hubIngressesSelector := labels.NewSelector().Add(*managedByHub)
-
-	list, err := w.kubeInformer.Networking().V1().Ingresses().Lister().Ingresses(namespace).List(hubIngressesSelector)
-	if err != nil {
-		return fmt.Errorf("unable to list ingresses: %w", err)
+		return fmt.Errorf("list gateway ingresses: %w", err)
 	}
 
 	apisByGroups := make(map[string][]*hubv1alpha1.API)
@@ -810,7 +804,8 @@ func (w *WatcherGateway) upsertIngressesOnNamespace(ctx context.Context, namespa
 
 	ingressUpserted := make(map[string]struct{})
 	for groups, apis := range apisByGroups {
-		name, err := getHubDomainIngressName(gateway.Name, groups)
+		var name string
+		name, err = getHubDomainIngressName(gateway.Name, groups)
 		if err != nil {
 			return fmt.Errorf("get hub domain ingress name: %w", err)
 		}
@@ -906,7 +901,8 @@ func (w *WatcherGateway) upsertIngressesOnNamespace(ctx context.Context, namespa
 
 		ing.Spec.Rules = rulesCustom
 
-		secretName, err := getCustomDomainSecretName(gateway.Name)
+		var secretName string
+		secretName, err = getCustomDomainSecretName(gateway.Name)
 		if err != nil {
 			return fmt.Errorf("get custom domains secret name: %w", err)
 		}
@@ -928,7 +924,7 @@ func (w *WatcherGateway) upsertIngressesOnNamespace(ctx context.Context, namespa
 		Int("upserted_ingresses_count", len(ingressUpserted)).
 		Msg("upserted ingresses")
 
-	for _, oldIngress := range list {
+	for _, oldIngress := range ingresses {
 		if _, found := ingressUpserted[oldIngress.Name]; !found {
 			if err := w.kubeClientSet.NetworkingV1().Ingresses(namespace).Delete(ctx, oldIngress.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error().Err(err).
@@ -940,6 +936,33 @@ func (w *WatcherGateway) upsertIngressesOnNamespace(ctx context.Context, namespa
 	}
 
 	return nil
+}
+
+func (w *WatcherGateway) listGatewayIngresses(namespace, gatewayName string) ([]*netv1.Ingress, error) {
+	managedByHub, err := labels.NewRequirement("app.kubernetes.io/managed-by", selection.Equals, []string{"traefik-hub"})
+	if err != nil {
+		return nil, fmt.Errorf("create managed by hub requirement: %w", err)
+	}
+	hubIngressesSelector := labels.NewSelector().Add(*managedByHub)
+
+	hubIngresses, err := w.kubeInformer.Networking().V1().Ingresses().Lister().Ingresses(namespace).List(hubIngressesSelector)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list ingresses: %w", err)
+	}
+
+	ingressName, err := getIngressName(gatewayName)
+	if err != nil {
+		return nil, fmt.Errorf("get ingress name for hub domain: %w", err)
+	}
+
+	gatewayIngresses := hubIngresses[:0]
+	for _, ingress := range hubIngresses {
+		if strings.HasPrefix(ingress.Name, ingressName) {
+			gatewayIngresses = append(gatewayIngresses, ingress)
+		}
+	}
+
+	return gatewayIngresses, nil
 }
 
 func newStripPrefixMiddleware(namespace, name string, apis []*hubv1alpha1.API) traefikv1alpha1.Middleware {

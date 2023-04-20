@@ -87,6 +87,7 @@ func Test_WatcherGatewayRun(t *testing.T) {
 					},
 				},
 			},
+			clusterIngresses:   "testdata/new-gateway/ingresses.yaml",
 			clusterAccesses:    "testdata/new-gateway/accesses.yaml",
 			clusterCollections: "testdata/new-gateway/collections.yaml",
 			clusterAPIs:        "testdata/new-gateway/apis.yaml",
